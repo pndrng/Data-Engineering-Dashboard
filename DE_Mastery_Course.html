@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Engineering Mastery — Panduranga</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--sidebar:#161b22;--card:#1c2128;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;
+  --yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#ffa657;
+  --phase1:#58a6ff;--phase2:#3fb950;--phase3:#ffa657;--phase4:#bc8cff;--phase5:#f85149;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+#sidebar{width:260px;min-width:260px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border)}
+#sidebar-header h2{font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+#sidebar-header .subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+#xp-bar-wrap{padding:12px 16px;border-bottom:1px solid var(--border)}
+.xp-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px}
+.xp-track{background:#21262d;border-radius:4px;height:6px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:4px;transition:width .4s ease}
+#nav{flex:1;overflow-y:auto;padding:8px 0}
+#nav::-webkit-scrollbar{width:4px}
+#nav::-webkit-scrollbar-track{background:transparent}
+#nav::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.phase-group{margin-bottom:4px}
+.phase-label{padding:8px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none}
+.phase-label .phase-icon{font-size:14px}
+.phase-label .chevron{margin-left:auto;transition:transform .2s;font-size:10px;color:var(--muted)}
+.phase-label.open .chevron{transform:rotate(90deg)}
+.module-list{display:none;padding:0 0 4px 0}
+.phase-label.open+.module-list{display:block}
+.mod-item{padding:7px 16px 7px 36px;font-size:12px;color:var(--muted);cursor:pointer;border-left:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px}
+.mod-item:hover{color:var(--text);background:#21262d}
+.mod-item.active{color:var(--text);border-left-color:var(--accent);background:#21262d}
+.mod-item .check{font-size:10px;margin-left:auto}
+.mod-item.done .check::after{content:'✓';color:var(--green)}
+#dashboard-btn{margin:8px 16px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;transition:background .15s}
+#dashboard-btn:hover{background:#21262d}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{padding:12px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;background:var(--sidebar)}
+#topbar h1{font-size:15px;font-weight:600}
+.badge-strip{display:flex;gap:8px;margin-left:auto}
+.badge{font-size:18px;cursor:default;opacity:.35;transition:opacity .2s;position:relative}
+.badge.earned{opacity:1}
+.badge[title]:hover::after{content:attr(title);position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);background:#21262d;border:1px solid var(--border);padding:3px 7px;border-radius:4px;font-size:10px;white-space:nowrap;color:var(--text);z-index:10}
+#content{flex:1;overflow-y:auto;padding:24px}
+#content::-webkit-scrollbar{width:6px}
+#content::-webkit-scrollbar-track{background:transparent}
+#content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* DASHBOARD */
+#dashboard{display:block}
+.dash-greeting{font-size:22px;font-weight:700;margin-bottom:4px}
+.dash-sub{color:var(--muted);font-size:14px;margin-bottom:24px}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.stat-card .val{font-size:28px;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+.phase-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.phase-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:border-color .2s}
+.phase-card:hover{border-color:var(--accent)}
+.phase-card .pc-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.phase-card .pc-icon{font-size:22px}
+.phase-card .pc-title{font-size:13px;font-weight:600}
+.phase-card .pc-weeks{font-size:11px;color:var(--muted)}
+.phase-card .pc-bar{background:#21262d;border-radius:3px;height:4px;overflow:hidden;margin-top:8px}
+.phase-card .pc-fill{height:100%;border-radius:3px;transition:width .4s}
+
+/* MODULE VIEW */
+#module-view{display:none}
+.mv-header{margin-bottom:20px}
+.mv-breadcrumb{font-size:11px;color:var(--muted);margin-bottom:6px}
+.mv-title{font-size:20px;font-weight:700;margin-bottom:4px}
+.mv-meta{display:flex;gap:16px;font-size:12px;color:var(--muted);align-items:center}
+.diff-stars{color:var(--yellow)}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:8px 18px;font-size:13px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* LEARN */
+.learn-section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+.learn-section h3{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--accent)}
+.learn-section p{font-size:13px;line-height:1.7;color:#cdd9e5;margin-bottom:10px}
+.learn-section p:last-child{margin-bottom:0}
+.learn-section ul{padding-left:18px;font-size:13px;line-height:1.9;color:#cdd9e5}
+.code-block{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Cascadia Code','Fira Code',monospace;font-size:12px;overflow-x:auto;margin:10px 0;color:#e6edf3;line-height:1.6}
+.code-block .kw{color:#ff7b72}
+.code-block .fn{color:#d2a8ff}
+.code-block .str{color:#a5d6ff}
+.code-block .cm{color:#8b949e;font-style:italic}
+.code-block .num{color:#ffa657}
+.tip-box{background:#132332;border:1px solid #1f6feb;border-radius:8px;padding:12px 14px;font-size:12px;color:#cdd9e5;margin-top:12px}
+.tip-box::before{content:'💡 Tip: ';font-weight:700;color:var(--accent)}
+.ref-link{color:var(--accent);font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:8px}
+.ref-link:hover{text-decoration:underline}
+
+/* FLASHCARDS */
+.fc-container{display:flex;flex-direction:column;align-items:center;gap:16px}
+.fc-progress{font-size:12px;color:var(--muted);align-self:flex-start}
+.fc-card{width:100%;max-width:540px;height:200px;cursor:pointer;perspective:1000px}
+.fc-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.4,0,.2,1)}
+.fc-card.flipped .fc-inner{transform:rotateY(180deg)}
+.fc-front,.fc-back{position:absolute;inset:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;backface-visibility:hidden;text-align:center}
+.fc-back{transform:rotateY(180deg);background:#132332;border-color:#1f6feb}
+.fc-front .q{font-size:16px;font-weight:600;line-height:1.5}
+.fc-front .hint{font-size:11px;color:var(--muted);margin-top:8px}
+.fc-back .a{font-size:14px;line-height:1.6;color:#cdd9e5}
+.fc-back .a code{background:#0d1117;padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--orange)}
+.fc-btns{display:flex;gap:12px}
+.fc-btn{padding:8px 20px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:12px;cursor:pointer;transition:all .15s}
+.fc-btn:hover{background:#21262d}
+.fc-btn.primary{background:var(--accent);border-color:var(--accent);color:#0f1117}
+.fc-btn.primary:hover{background:#79c0ff}
+.fc-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:300px}
+.fc-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s}
+.fc-dot.seen{background:var(--accent)}
+
+/* QUIZ */
+.quiz-wrap{max-width:600px}
+.quiz-question{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+.quiz-q-num{font-size:11px;color:var(--muted);margin-bottom:8px}
+.quiz-q-text{font-size:14px;font-weight:600;line-height:1.5;margin-bottom:14px}
+.quiz-opts{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{padding:10px 14px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;transition:all .15s;display:flex;align-items:center;gap:10px}
+.quiz-opt:hover{border-color:var(--accent);background:#21262d}
+.quiz-opt.selected{border-color:var(--accent);background:#132332}
+.quiz-opt.correct{border-color:var(--green);background:#12261e;color:var(--green)}
+.quiz-opt.wrong{border-color:var(--red);background:#2a1215;color:var(--red)}
+.quiz-opt .opt-letter{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.quiz-explanation{margin-top:12px;padding:10px 14px;background:#132332;border-radius:6px;font-size:12px;color:#cdd9e5;display:none}
+.quiz-explanation.show{display:block}
+.quiz-submit{padding:10px 24px;background:var(--accent);border:none;border-radius:6px;color:#0f1117;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.quiz-submit:hover{background:#79c0ff}
+.quiz-submit:disabled{opacity:.4;cursor:not-allowed}
+.quiz-score-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;text-align:center;max-width:400px}
+.quiz-score-card .big-score{font-size:48px;font-weight:700;color:var(--accent)}
+.quiz-score-card .score-lbl{font-size:14px;color:var(--muted);margin-top:4px}
+.quiz-score-card .xp-earned{font-size:16px;color:var(--green);margin-top:12px;font-weight:600}
+.quiz-score-card .retry-btn{margin-top:16px;padding:10px 24px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;cursor:pointer}
+.quiz-score-card .retry-btn:hover{background:#21262d}
+
+/* CODE CHALLENGE */
+.cc-wrap{max-width:680px}
+.cc-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+.cc-card h4{font-size:13px;font-weight:700;margin-bottom:6px}
+.cc-scenario{font-size:13px;color:#cdd9e5;line-height:1.6;margin-bottom:14px}
+.cc-type{font-size:11px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
+.cc-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.cc-opt{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.cc-opt:hover{border-color:var(--accent)}
+.cc-opt.selected{border-color:var(--accent)}
+.cc-opt.correct{border-color:var(--green)}
+.cc-opt.wrong{border-color:var(--red)}
+.cc-opt pre{font-family:'Cascadia Code','Fira Code',monospace;font-size:12px;line-height:1.6;white-space:pre;overflow-x:auto;color:#e6edf3}
+.cc-result{padding:10px 14px;border-radius:6px;font-size:12px;margin-top:8px;display:none}
+.cc-result.show{display:block}
+.cc-result.pass{background:#12261e;color:var(--green);border:1px solid var(--green)}
+.cc-result.fail{background:#2a1215;color:var(--red);border:1px solid var(--red)}
+.cc-check-btn{padding:9px 20px;background:var(--green);border:none;border-radius:6px;color:#0f1117;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.cc-check-btn:hover{opacity:.85}
+.cc-check-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* XP TOAST */
+#xp-toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#0f1117;padding:10px 18px;border-radius:8px;font-weight:700;font-size:14px;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:999}
+#xp-toast.show{opacity:1;transform:translateY(0)}
+
+/* SCROLL */
+@media(max-width:700px){
+  #sidebar{display:none}
+  #content{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h2>🚀 DE Mastery</h2>
+    <div class="subtitle">Panduranga's 12-Week Path</div>
+  </div>
+  <div id="xp-bar-wrap">
+    <div class="xp-label"><span>XP: <span id="xp-val">0</span></span><span>Level <span id="lvl-val">1</span></span></div>
+    <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+  </div>
+  <button id="dashboard-btn" onclick="showDashboard()">🏠 Dashboard</button>
+  <div id="nav"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <h1 id="topbar-title">Dashboard</h1>
+    <div class="badge-strip" id="badge-strip">
+      <span class="badge" id="b1" title="Phase 1 Complete">🔧</span>
+      <span class="badge" id="b2" title="Phase 2 Complete">❄️</span>
+      <span class="badge" id="b3" title="Phase 3 Complete">☁️</span>
+      <span class="badge" id="b4" title="Phase 4 Complete">⚡</span>
+      <span class="badge" id="b5" title="Phase 5 Complete">🤖</span>
+    </div>
+  </div>
+  <div id="content">
+    <div id="dashboard"></div>
+    <div id="module-view"></div>
+  </div>
+</div>
+
+<div id="xp-toast">+0 XP</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const state = {
+  xp: 0,
+  level: 1,
+  completedModules: new Set(),
+  quizScores: {},
+  flashcardsSeen: {},
+  ccScores: {},
+  currentModule: null,
+  currentTab: 'learn'
+};
+
+const XP_PER_LEVEL = 200;
+const XP_FLASHCARD = 5;
+const XP_QUIZ_CORRECT = 20;
+const XP_CC_CORRECT = 30;
+</script>
+<script>
+// ─── COURSE DATA ─────────────────────────────────────────────────────────────
+const COURSE = [
+{
+  id:'p1', title:'Phase 1: Foundations', weeks:'Weeks 1–2', icon:'🔧', color:'var(--phase1)', badgeId:'b1',
+  modules:[
+    {
+      id:'p1m1', title:'Git & GitHub', difficulty:1,
+      learn:[
+        {h:'Why Git Matters for Data Engineers', p:`Every DE job listing requires Git. It's how you version-control your Airflow DAGs, dbt models, and Python scripts. Without Git, you can't collaborate, you can't do CI/CD, and your resume gap shows immediately.`},
+        {h:'Core Git Workflow', p:`The daily workflow: <b>branch → code → stage → commit → push → pull request</b>. For data pipelines, always work on a feature branch — never commit directly to main.`,
+         code:`# Daily Git workflow for a DE
+git checkout -b feature/add-snowflake-dag   # new branch
+git add dags/snowflake_load.py              # stage file
+git commit -m "feat: add Snowflake daily load DAG"
+git push origin feature/add-snowflake-dag  # push to remote
+# → open Pull Request on GitHub`},
+        {h:'Branching Strategy', p:`Use trunk-based development: short-lived feature branches merged to main frequently. Name branches descriptively: <code>feat/</code>, <code>fix/</code>, <code>refactor/</code>.`},
+        {h:'GitHub Actions for Pipelines', p:`GitHub Actions runs automated checks every time you push. For data pipelines, this means linting Python, running dbt tests, and validating DAG syntax.`,
+         code:`# .github/workflows/ci.yml
+name: Pipeline CI
+on: [push, pull_request]
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Lint Python
+        run: pip install flake8 && flake8 dags/
+      - name: Run dbt tests
+        run: dbt test --profiles-dir .`},
+        {h:'Resources', refs:['https://learngitbranching.js.org — interactive Git learning','https://github.com — create account and push your first repo']}
+      ],
+      flashcards:[
+        {q:'What does `git rebase` do vs `git merge`?', a:'Both integrate changes. <code>merge</code> creates a merge commit preserving history. <code>rebase</code> rewrites history for a clean linear log. Use rebase for feature branches before merging to main.'},
+        {q:'What is a Pull Request (PR)?', a:'A PR is a request to merge your feature branch into main. It allows code review, automated checks, and discussion before the code lands in production.'},
+        {q:'What does `git stash` do?', a:'Temporarily shelves (stashes) uncommitted changes so you can switch branches. Retrieve with <code>git stash pop</code>.'},
+        {q:'What is the purpose of `.gitignore`?', a:'Lists files/folders that Git should NOT track — e.g., <code>.env</code> files with secrets, <code>__pycache__/</code>, <code>*.pyc</code>, local config files.'},
+        {q:'What is trunk-based development?', a:'A branching model where developers work on short-lived feature branches and merge to <code>main</code> (trunk) frequently — at least daily. Reduces merge conflicts and enables CI/CD.'},
+        {q:'What is GitHub Actions used for in a data pipeline?', a:'Automating CI/CD: running linting, unit tests, dbt tests, and deployments automatically on every push or pull request.'}
+      ],
+      quiz:[
+        {q:'You want to undo your last commit but KEEP the code changes. Which command do you use?',opts:['git reset --hard HEAD~1','git reset --soft HEAD~1','git revert HEAD','git checkout HEAD~1'],ans:1,exp:'`git reset --soft HEAD~1` moves the HEAD back one commit but leaves your changes staged. `--hard` would discard changes entirely.'},
+        {q:'Which GitHub Actions trigger runs CI on every push AND pull request?',opts:['on: [commit]','on: push','on: [push, pull_request]','on: merge'],ans:2,exp:'`on: [push, pull_request]` triggers the workflow both when you push a branch and when a PR is opened or updated.'},
+        {q:'What should you NEVER commit to a public GitHub repo?',opts:['Airflow DAG files','dbt model SQL files','.env files with passwords and API keys','README.md'],ans:2,exp:'Never commit secrets like passwords, API keys, or credentials. Use `.gitignore` to exclude `.env` files and use GitHub Secrets for CI/CD credentials.'},
+        {q:'What does `git cherry-pick <commit-hash>` do?',opts:['Deletes a commit','Applies a specific commit from another branch onto your current branch','Reverts all changes','Creates a tag'],ans:1,exp:'`cherry-pick` lets you pull a single commit from any branch and apply it to your current branch — useful for hotfixes.'},
+        {q:'In trunk-based development, how long should a feature branch live?',opts:['3–6 months','Until the feature is perfect','Hours to a few days — merge frequently','Until the sprint ends'],ans:2,exp:'Trunk-based development calls for short-lived branches (hours to days) merged frequently to main to avoid large merge conflicts and enable continuous integration.'}
+      ],
+      challenges:[
+        {title:'Choose the Correct Git Workflow',scenario:'You just finished writing a new Airflow DAG for loading data from S3 to Snowflake. Which sequence correctly stages, commits, and pushes your work?',opts:[
+          `git add .\ngit commit -m "new dag"\ngit push`,
+          `git checkout -b feat/s3-to-snowflake\ngit add dags/s3_snowflake.py\ngit commit -m "feat: add S3→Snowflake DAG with SLA monitoring"\ngit push origin feat/s3-to-snowflake`,
+          `git push origin main\ngit commit -m "dag added"`,
+          `git merge main\ngit commit -m "update"`
+        ],ans:1,exp:'Option B follows best practice: feature branch with a descriptive name, stages only the relevant file, uses a conventional commit message, and pushes to the feature branch (not main).'}
+      ]
+    },
+    {
+      id:'p1m2', title:'Docker Basics', difficulty:1,
+      learn:[
+        {h:'Why Docker for Data Engineering', p:`Docker packages your code and all its dependencies into a container that runs identically everywhere. For DEs, this means running Airflow locally the same way it runs in production, and deploying pipelines without "works on my machine" problems.`},
+        {h:'Key Concepts', p:`<b>Image:</b> A blueprint (read-only). <b>Container:</b> A running instance of an image. <b>Dockerfile:</b> Instructions to build a custom image. <b>docker-compose.yml:</b> Defines multi-container setups (e.g., Airflow + Postgres + Redis together).`},
+        {h:'Running Airflow Locally with Docker', p:`The official Airflow Docker Compose file spins up the scheduler, webserver, and Postgres database in one command.`,
+         code:`# Start Airflow with Docker Compose
+docker compose up -d
+
+# Check running containers
+docker ps
+
+# View Airflow logs
+docker logs airflow-scheduler
+
+# Stop everything
+docker compose down`},
+        {h:'Writing a Dockerfile for a Python Pipeline', p:``,
+         code:`# Dockerfile for a Python data pipeline
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+CMD ["python", "pipeline.py"]`},
+        {h:'Resources', refs:['https://docs.docker.com/get-started — official Docker docs','Airflow official docker-compose.yaml from airflow.apache.org']}
+      ],
+      flashcards:[
+        {q:'What is the difference between a Docker image and a container?', a:'An <b>image</b> is a read-only blueprint (like a class). A <b>container</b> is a running instance of that image (like an object). Multiple containers can run from the same image.'},
+        {q:'What does `docker-compose up -d` do?', a:'Starts all services defined in `docker-compose.yml` in detached mode (background). `-d` means you get your terminal back while containers keep running.'},
+        {q:'What is a Docker volume used for?', a:'Volumes persist data outside the container lifecycle. Without volumes, all data inside a container is lost when it stops. Used for databases, DAG files, and logs in Airflow.'},
+        {q:'What is the purpose of `.dockerignore`?', a:'Lists files to exclude from the Docker build context — similar to `.gitignore`. Keeps images small by excluding `__pycache__`, `.git`, `*.pyc`, and local data files.'},
+        {q:'How do you run Airflow DAGs locally with Docker?', a:'Use the official Airflow Docker Compose file: `docker compose up -d`. Access the UI at `localhost:8080`. Mount your `/dags` folder as a volume so Airflow sees your local DAG files.'}
+      ],
+      quiz:[
+        {q:'Which command builds a Docker image from a Dockerfile in the current directory and tags it "my-pipeline:v1"?',opts:['docker run -t my-pipeline:v1 .','docker build -t my-pipeline:v1 .','docker create my-pipeline:v1','docker pull my-pipeline:v1'],ans:1,exp:'`docker build -t <tag> <context>` builds an image. `-t` sets the name/tag. `.` means use the current directory as the build context.'},
+        {q:'In a docker-compose.yml, what does the `volumes:` key do under a service?',opts:['Sets environment variables','Exposes network ports','Mounts host directories into the container','Sets resource limits'],ans:2,exp:'`volumes:` mounts directories or named volumes from the host into the container, enabling persistence and sharing of files like DAGs.'},
+        {q:'What is the correct way to pass secret credentials to a Docker container?',opts:['Hardcode them in the Dockerfile','Use environment variables via .env file (never commit to Git)','Put them in a COPY instruction','Write them in CMD'],ans:1,exp:'Use a `.env` file referenced in docker-compose.yml and add `.env` to `.gitignore`. Never bake secrets into Dockerfiles or images.'},
+        {q:'Which command shows all currently running containers?',opts:['docker images','docker ps','docker ls','docker status'],ans:1,exp:'`docker ps` shows running containers. Add `-a` flag to see stopped containers too.'}
+      ],
+      challenges:[
+        {title:'Fix the Broken Dockerfile',scenario:'A colleague wrote this Dockerfile for a pipeline. It builds but the pipeline fails with "ModuleNotFoundError". Pick the corrected version:',opts:[
+          `FROM python:3.11\nWORKDIR /app\nCOPY pipeline.py .\nRUN pip install pandas boto3\nCMD ["python","pipeline.py"]`,
+          `FROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY pipeline.py .\nCMD ["python","pipeline.py"]`,
+          `FROM python:3.11\nRUN pip install -r requirements.txt\nCOPY . .\nCMD python`,
+          `COPY . .\nFROM python:3.11\nCMD ["python","pipeline.py"]`
+        ],ans:1,exp:'Option B is correct: copy requirements.txt FIRST (for layer caching), install dependencies, THEN copy the code. FROM must always come first. Option A hardcodes deps (not maintainable). Option C copies before installing. Option D puts FROM after COPY which is invalid.'}
+      ]
+    },
+    {
+      id:'p1m3', title:'Advanced SQL', difficulty:2,
+      learn:[
+        {h:'Window Functions — The Most Important SQL Skill', p:`Window functions perform calculations across a set of rows related to the current row, without collapsing them like GROUP BY. Every senior DE interview will test these.`,
+         code:`-- Running total of daily revenue per region
+SELECT
+    date,
+    region,
+    revenue,
+    SUM(revenue) OVER (
+        PARTITION BY region
+        ORDER BY date
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS running_total,
+    LAG(revenue, 1) OVER (PARTITION BY region ORDER BY date) AS prev_day_rev,
+    revenue - LAG(revenue,1) OVER (PARTITION BY region ORDER BY date) AS day_over_day
+FROM daily_sales;`},
+        {h:'CTEs and Recursive CTEs', p:`Common Table Expressions make complex queries readable. Recursive CTEs handle hierarchical data like org charts or bill-of-materials.`,
+         code:`-- CTE: multi-step transformation
+WITH base AS (
+    SELECT policy_id, claim_date, claim_amount
+    FROM claims WHERE status = 'approved'
+),
+ranked AS (
+    SELECT *,
+        RANK() OVER (PARTITION BY policy_id ORDER BY claim_date DESC) AS rk
+    FROM base
+)
+SELECT * FROM ranked WHERE rk = 1;  -- latest claim per policy`},
+        {h:'Query Optimization with EXPLAIN', p:`Always check your query plan with EXPLAIN (or EXPLAIN ANALYZE in PostgreSQL). Look for: full table scans, missing indexes, large hash joins on unsorted data.`,
+         code:`-- Snowflake: check query profile in UI
+-- PostgreSQL:
+EXPLAIN ANALYZE
+SELECT c.customer_id, SUM(o.amount)
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+GROUP BY c.customer_id;
+-- Look for: Seq Scan (bad on large tables), Index Scan (good)`},
+        {h:'SCD Types for Data Warehousing', p:`Slowly Changing Dimensions (SCD) handle how historical data changes over time. Type 1 overwrites. Type 2 adds a new row with effective dates — the most important for insurance data.`},
+        {h:'Resources', refs:['https://www.postgresql.org/docs/current/tutorial-window.html — PostgreSQL Window Functions', 'https://en.wikipedia.org/wiki/Slowly_changing_dimension — SCD Concepts']}
+      ],
+      flashcards:[
+        {q:'What is the difference between RANK() and DENSE_RANK()?', a:'Both rank rows. <code>RANK()</code> skips numbers after ties (1,2,2,4). <code>DENSE_RANK()</code> never skips (1,2,2,3). Use DENSE_RANK when you need contiguous rankings.'},
+        {q:'What does PARTITION BY do in a window function?', a:'Divides rows into groups (partitions) for the window function to operate within. Like GROUP BY, but rows are not collapsed — each row keeps its individual values plus the window calculation.'},
+        {q:'What is a CTE and why use it over a subquery?', a:'A CTE (WITH clause) is a named, reusable temporary result set. CTEs are more readable, can be referenced multiple times, and support recursion. Subqueries nest and are harder to debug.'},
+        {q:'What is SCD Type 2?', a:'Slowly Changing Dimension Type 2 tracks historical changes by adding a new row for each change, with <code>effective_from</code>, <code>effective_to</code>, and <code>is_current</code> columns. Preserves full history.'},
+        {q:'What does EXPLAIN ANALYZE do in PostgreSQL?', a:'Shows the query execution plan AND actually runs the query, reporting real timing for each step. Use to find bottlenecks: sequential scans, slow joins, missing indexes.'},
+        {q:'What is the difference between WHERE and HAVING?', a:'<code>WHERE</code> filters rows BEFORE aggregation. <code>HAVING</code> filters AFTER aggregation. You cannot use aggregate functions in WHERE — use HAVING for those.'}
+      ],
+      quiz:[
+        {q:'Which window function returns the value from the previous row?',opts:['LEAD()','LAG()','FIRST_VALUE()','ROW_NUMBER()'],ans:1,exp:'LAG(col, n) returns the value n rows before the current row. LEAD() goes forward. Both are used for period-over-period calculations.'},
+        {q:'A query runs slowly on a 100M row table. What is the FIRST thing you should check?',opts:['Add more RAM to the server','Run EXPLAIN to see if there is a full table scan','Rewrite it in Python','Add an ORDER BY clause'],ans:1,exp:'Always EXPLAIN first. A full sequential scan on 100M rows is a common culprit. You may need an index on the filter column, or the query may need restructuring.'},
+        {q:'You need to find the TOP 1 record per customer by date. Which approach is most efficient?',opts:['Subquery with MAX(date)','ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY date DESC) = 1 in a CTE','DISTINCT ON customer_id','GROUP BY customer_id HAVING MAX(date)'],ans:1,exp:'ROW_NUMBER() with PARTITION BY is the standard, performant way to get the "latest record per group" pattern. It handles ties correctly and is easily extended.'},
+        {q:'What is the correct SCD Type 2 design for tracking customer address changes?',opts:['Overwrite the address column on change','Add a new row with effective_from, effective_to dates and is_current flag','Delete old row and insert new','Store all addresses in a JSON array'],ans:1,exp:'SCD Type 2 adds a new row per change with validity dates, preserving full history. This is critical for auditing and point-in-time analysis in insurance/BFSI.'},
+        {q:'What does `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` mean?',opts:['Only the current row','All rows in the partition','All rows from start of partition to current row (running total)','The next 3 rows'],ans:2,exp:'This frame clause means: from the very first row of the partition up to and including the current row. Perfect for running totals, cumulative sums.'}
+      ],
+      challenges:[
+        {title:'Write the Correct Window Function',scenario:'You need to calculate each claim\'s percentage of the total claims for its policy. Which SQL is correct?',opts:[
+          `SELECT policy_id, claim_amount,\n  claim_amount / SUM(claim_amount) * 100 AS pct\nFROM claims GROUP BY policy_id`,
+          `SELECT policy_id, claim_amount,\n  ROUND(100.0 * claim_amount /\n    SUM(claim_amount) OVER (PARTITION BY policy_id), 2\n  ) AS pct_of_policy\nFROM claims`,
+          `SELECT policy_id, SUM(claim_amount) AS total\nFROM claims GROUP BY policy_id`,
+          `SELECT policy_id, claim_amount / COUNT(*) AS pct\nFROM claims`
+        ],ans:1,exp:'Option B correctly uses SUM() as a window function with PARTITION BY policy_id. This keeps all rows visible while computing each claim as a % of its policy total. Option A collapses rows with GROUP BY and loses individual claims.'}
+      ]
+    },
+    {
+      id:'p1m4', title:'Data Modeling', difficulty:2,
+      learn:[
+        {h:'Star Schema — The Foundation', p:`The Star Schema is the most common warehouse design. A central fact table surrounded by dimension tables. Every DE interview for analytics roles will ask about this. Your insurance domain experience maps perfectly here.`},
+        {h:'Fact and Dimension Tables', p:`<b>Fact tables</b> store measurable events (claims, transactions, policy renewals) — wide, numeric, high-volume. <b>Dimension tables</b> store descriptive context (customer, product, date, geography) — smaller, text-heavy.`,
+         code:`-- Insurance Star Schema example
+-- FACT TABLE
+CREATE TABLE fact_claims (
+    claim_id      BIGINT PRIMARY KEY,
+    policy_sk     INT REFERENCES dim_policy(policy_sk),
+    customer_sk   INT REFERENCES dim_customer(customer_sk),
+    date_sk       INT REFERENCES dim_date(date_sk),
+    claim_amount  DECIMAL(12,2),
+    approved_flag BOOLEAN
+);
+
+-- DIMENSION TABLE (SCD Type 2)
+CREATE TABLE dim_customer (
+    customer_sk   INT PRIMARY KEY,  -- surrogate key
+    customer_id   VARCHAR(20),      -- natural key
+    customer_name VARCHAR(100),
+    city          VARCHAR(50),
+    effective_from DATE,
+    effective_to   DATE,
+    is_current     BOOLEAN
+);`},
+        {h:'Kimball vs Inmon', p:`<b>Kimball (bottom-up):</b> Build data marts by department first, using dimensional modeling. Fast to deliver business value. Most common in modern stacks. <b>Inmon (top-down):</b> Build one normalized enterprise data warehouse first, then derive marts. More upfront effort.`},
+        {h:'Surrogate Keys vs Natural Keys', p:`Always use surrogate keys (auto-incremented integers) as primary keys in dimension tables. Natural keys (customer ID, policy number) can change or be reused — surrogate keys never change.`},
+        {h:'Resources', refs:['https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dimensional-modeling-techniques/ — Kimball Dimensional Modeling Techniques', 'https://www.databricks.com/glossary/star-schema — Star Schema Overview']}
+      ],
+      flashcards:[
+        {q:'What is a surrogate key?', a:'A system-generated, meaningless integer used as the primary key in a dimension table. It never changes even if the natural business key changes. Ensures join stability in the warehouse.'},
+        {q:'What is the difference between a fact table and a dimension table?', a:'<b>Fact table:</b> stores quantitative, measurable events (claims, sales). Wide, many rows, numeric foreign keys. <b>Dimension table:</b> stores descriptive context (customer, product, date). Fewer rows, text attributes.'},
+        {q:'What is a Snowflake Schema vs Star Schema?', a:'Both use fact + dimension tables. In a <b>Star Schema</b>, dimensions are denormalized (flat). In a <b>Snowflake Schema</b>, dimensions are normalized into sub-tables. Star is simpler and faster for queries; Snowflake saves storage.'},
+        {q:'What is a degenerate dimension?', a:'A dimension attribute stored directly in the fact table (not in a separate dimension table). Example: order_number or transaction_id — no other attributes to justify a full dimension table.'},
+        {q:'What is grain in a fact table?', a:'The grain defines what ONE row in the fact table represents. Must be declared before designing the table. Example: "One row = one insurance claim event." All measures must be at this grain.'}
+      ],
+      quiz:[
+        {q:'In a Star Schema for insurance claims, which table would store "claim_amount"?',opts:['dim_customer','dim_policy','fact_claims','dim_date'],ans:2,exp:'Claim amounts are measurements/metrics — they belong in the FACT table. Dimension tables store descriptive attributes (names, categories), not measurable numbers.'},
+        {q:'Why should you use surrogate keys instead of natural keys in dimension tables?',opts:['Natural keys are too long','Surrogate keys are human-readable','Natural keys can change or be reused; surrogate keys provide stable, permanent join keys','Surrogate keys are required by SQL'],ans:2,exp:'Natural keys (like policy numbers) can be reused after cancellation or changed in source systems. Surrogate keys are immutable warehouse-generated IDs that keep historical joins intact.'},
+        {q:'What does "grain" mean in data modeling?',opts:['The database engine used','What one row in the fact table represents','The number of tables in the schema','The ETL refresh frequency'],ans:1,exp:'Grain is the fundamental definition of what one row represents. Example: "one row = one daily claim event per policy." All metrics must be at this same level of granularity.'},
+        {q:'Which SCD type overwrites old values (no history preserved)?',opts:['SCD Type 1','SCD Type 2','SCD Type 3','SCD Type 6'],ans:0,exp:'SCD Type 1 simply overwrites the old value with the new one. No history is kept. Suitable for corrections (fixing a typo). NOT suitable for auditing or point-in-time analysis.'}
+      ],
+      challenges:[
+        {title:'Design the Correct Fact Table',scenario:'You are building a Star Schema for policy renewals. Each renewal has a date, policy, customer, and premium amount. Which design is correct?',opts:[
+          `CREATE TABLE fact_renewals (\n  renewal_id INT,\n  customer_name VARCHAR(100),\n  policy_number VARCHAR(20),\n  renewal_date DATE,\n  premium DECIMAL(10,2)\n)`,
+          `CREATE TABLE fact_renewals (\n  renewal_id BIGINT PRIMARY KEY,\n  date_sk INT REFERENCES dim_date(date_sk),\n  policy_sk INT REFERENCES dim_policy(policy_sk),\n  customer_sk INT REFERENCES dim_customer(customer_sk),\n  premium_amount DECIMAL(10,2),\n  is_auto_renewal BOOLEAN\n)`,
+          `CREATE TABLE fact_renewals (\n  customer_id INT,\n  premium DECIMAL(10,2)\n)`,
+          `CREATE TABLE dim_renewals (\n  renewal_id INT,\n  policy_sk INT,\n  premium DECIMAL\n)`
+        ],ans:1,exp:'Option B is correct: surrogate key FKs to dimension tables (not natural keys or text), measures as decimals, and a properly named fact table. Option A stores dimensional attributes directly (denormalized, violates star schema). Option D names it a dimension which is wrong.'}
+      ]
+    }
+  ]
+},
+{
+  id:'p2', title:'Phase 2: Snowflake + dbt', weeks:'Weeks 3–5', icon:'❄️', color:'var(--phase2)', badgeId:'b2',
+  modules:[
+    {
+      id:'p2m1', title:'Snowflake Fundamentals', difficulty:2,
+      learn:[
+        {h:'Why Snowflake Dominates', p:`Snowflake is in 55% of DE job descriptions in India. It's a cloud-native data warehouse with near-zero administration, auto-scaling, and a storage/compute separation that makes it cost-efficient at any scale.`},
+        {h:'Key Snowflake Concepts', p:`<b>Virtual Warehouses:</b> Compute clusters you scale up/down independently. <b>Databases & Schemas:</b> Standard SQL hierarchy. <b>Stages:</b> Staging areas for loading data (S3 buckets, Azure Blob). <b>Snowpipe:</b> Continuous/auto-ingestion from cloud storage.`,
+         code:`-- Create a virtual warehouse
+CREATE WAREHOUSE my_wh
+  WAREHOUSE_SIZE = 'X-SMALL'
+  AUTO_SUSPEND = 300
+  AUTO_RESUME = TRUE;
+
+-- Create a stage pointing to S3
+CREATE STAGE my_s3_stage
+  URL = 's3://my-bucket/data/'
+  CREDENTIALS = (AWS_KEY_ID='...' AWS_SECRET_KEY='...');
+
+-- Load data from stage
+COPY INTO raw.claims
+FROM @my_s3_stage/claims/
+FILE_FORMAT = (TYPE='CSV' SKIP_HEADER=1);`},
+        {h:'Clustering Keys & Query Performance', p:`For large tables (>1TB), clustering keys keep related rows physically co-located, reducing how much data Snowflake scans. Choose columns used frequently in WHERE or JOIN — not high-cardinality columns.`,
+         code:`-- Add clustering on a large partitioned table
+ALTER TABLE fact_claims CLUSTER BY (claim_date, region);
+
+-- Check clustering health
+SELECT SYSTEM$CLUSTERING_INFORMATION('fact_claims');`},
+        {h:'RBAC — Role-Based Access Control', p:`Snowflake uses roles to control access. Key roles: SYSADMIN (objects), SECURITYADMIN (users/roles), ACCOUNTADMIN (billing). Always grant minimum privileges. Create role hierarchies for team access.`},
+        {h:'Resources', refs:['https://docs.snowflake.com/en/user-guide/getting-started — Snowflake Official Guide', 'https://quickstarts.snowflake.com/ — Snowflake Quickstarts']}
+      ],
+      flashcards:[
+        {q:'What is the key architectural advantage of Snowflake?', a:'Separation of storage and compute. Storage is cheap, persistent S3-based. Compute (virtual warehouses) scales independently and can be suspended when idle — you only pay for what you use.'},
+        {q:'What is Snowpipe used for?', a:'Snowpipe is Snowflake\'s continuous data ingestion service. It automatically loads new files from cloud stages (S3/Azure) as soon as they arrive, without needing a scheduled COPY INTO job.'},
+        {q:'What is a clustering key in Snowflake?', a:'An optional attribute that physically orders data on disk, reducing micro-partition pruning during queries. Best for large tables filtered on date or region. NOT the same as a primary key.'},
+        {q:'What does AUTO_SUSPEND do for a virtual warehouse?', a:'Automatically suspends (pauses) the warehouse after N seconds of inactivity, stopping compute charges. Combined with AUTO_RESUME, the warehouse starts instantly when queries arrive.'},
+        {q:'What is the difference between COPY INTO and INSERT in Snowflake?', a:'<code>COPY INTO</code> bulk-loads from a stage (S3/Azure) — fast, efficient for large files. <code>INSERT</code> is row-by-row or small set DML. Always use COPY INTO for pipeline ingestion, not INSERT loops.'}
+      ],
+      quiz:[
+        {q:'You have a 2TB fact table queried daily with WHERE claim_date = \'2025-01-15\'. What should you do to improve performance?',opts:['Add a primary key on claim_id','Create a clustering key on claim_date','Increase warehouse size permanently','Add an index on claim_date'],ans:1,exp:'Snowflake does not use traditional indexes — instead, clustering keys improve micro-partition pruning. Clustering on claim_date means only relevant partitions are scanned for date-filtered queries.'},
+        {q:'What does Snowflake\'s "Time Travel" feature allow?',opts:['Query future predictions','Query data as it existed at a previous point in time (up to 90 days)','Travel between regions','Switch between warehouse sizes'],ans:1,exp:'Time Travel lets you query historical data using AT or BEFORE syntax: SELECT * FROM orders AT (TIMESTAMP => \'2025-01-01\'::timestamp). Essential for auditing and recovering from bad loads.'},
+        {q:'Which Snowflake role should you use for day-to-day pipeline development?',opts:['ACCOUNTADMIN','SYSADMIN','A custom role with only necessary privileges','PUBLIC'],ans:2,exp:'Always follow least-privilege. Create a custom role (e.g., DE_ROLE) with only the permissions needed: read from stages, write to specific schemas. ACCOUNTADMIN has billing access and should almost never be used for pipelines.'},
+        {q:'What is a Snowflake "stage"?',opts:['A development environment','A named pointer to a cloud storage location used for loading/unloading data','A type of virtual warehouse','A schema prefix'],ans:1,exp:'A stage is a named location (internal Snowflake storage or external like S3/Azure Blob) from which you load data using COPY INTO or Snowpipe.'}
+      ],
+      challenges:[
+        {title:'Write the Correct COPY INTO Command',scenario:'You need to load CSV files from an S3 stage named `@claims_stage` (path: /2025/01/) into table `raw.claims`. Files have a header row. Pick the correct command:',opts:[
+          `INSERT INTO raw.claims\nSELECT * FROM @claims_stage/2025/01/`,
+          `COPY INTO raw.claims\nFROM @claims_stage/2025/01/\nFILE_FORMAT = (TYPE='CSV' FIELD_OPTIONALLY_ENCLOSED_BY='"' SKIP_HEADER=1)\nON_ERROR = 'CONTINUE';`,
+          `LOAD DATA INTO raw.claims\nFROM '@claims_stage/2025/01/'\nFORMAT CSV;`,
+          `SELECT * INTO raw.claims FROM @claims_stage;`
+        ],ans:1,exp:'Option B is the correct Snowflake COPY INTO syntax: specifies the stage path, file format with CSV type and SKIP_HEADER=1 for header rows, and ON_ERROR handling. Option A (INSERT SELECT from stage) is not valid syntax. Option C is MySQL syntax.'}
+      ]
+    },
+    {
+      id:'p2m2', title:'dbt Core', difficulty:2,
+      learn:[
+        {h:'What dbt Does', p:`dbt (data build tool) handles the T in ELT. It lets you write SQL SELECT statements and dbt compiles them into CREATE TABLE / CREATE VIEW statements, handles dependencies, runs tests, and generates documentation. It is the #1 rising skill in the Analytics Engineer role.`},
+        {h:'Project Structure', p:``,
+         code:`my_dbt_project/
+├── models/
+│   ├── staging/         # Raw source cleaning (stg_*)
+│   │   └── stg_claims.sql
+│   ├── intermediate/    # Business logic (int_*)
+│   │   └── int_claims_enriched.sql
+│   └── marts/           # Final business models (fct_*, dim_*)
+│       ├── fct_claims.sql
+│       └── dim_customer.sql
+├── tests/               # Custom data tests
+├── macros/              # Reusable Jinja functions
+├── seeds/               # Static CSV reference data
+└── dbt_project.yml      # Project config`},
+        {h:'Writing dbt Models', p:`A dbt model is just a SQL SELECT. dbt wraps it with the right DDL. Use the ref() function to reference other models — dbt builds the dependency DAG automatically.`,
+         code:`-- models/staging/stg_claims.sql
+{{ config(materialized='view') }}
+
+SELECT
+    claim_id,
+    policy_id,
+    CAST(claim_date AS DATE)   AS claim_date,
+    CAST(claim_amount AS FLOAT) AS claim_amount,
+    UPPER(status)               AS status
+FROM {{ source('raw', 'claims') }}
+WHERE claim_date >= '2020-01-01'
+
+-- models/marts/fct_claims.sql
+{{ config(materialized='table') }}
+
+SELECT
+    c.claim_id,
+    c.claim_date,
+    c.claim_amount,
+    p.policy_type,
+    cu.customer_name
+FROM {{ ref('stg_claims') }} c
+JOIN {{ ref('stg_policies') }} p USING (policy_id)
+JOIN {{ ref('stg_customers') }} cu USING (customer_id)`},
+        {h:'dbt Tests', p:`dbt has built-in tests: unique, not_null, accepted_values, relationships. Run with \`dbt test\`. These are your data quality gates — every model should have at least \`unique\` and \`not_null\` on key columns.`,
+         code:`# schema.yml — define tests
+models:
+  - name: fct_claims
+    columns:
+      - name: claim_id
+        tests:
+          - unique
+          - not_null
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['approved', 'rejected', 'pending']`},
+        {h:'Resources', refs:['https://docs.getdbt.com/docs/introduction — dbt Official Docs', 'https://courses.getdbt.com/ — dbt Fundamentals Course']}
+      ],
+      flashcards:[
+        {q:'What does `{{ ref(\'model_name\') }}` do in dbt?', a:'Creates a dependency reference to another dbt model. dbt uses these to build a DAG and run models in the correct order. It also resolves to the correct schema/database name in any environment.'},
+        {q:'What is the difference between `view` and `table` materialization in dbt?', a:'<code>view</code>: dbt creates a SQL view — no data stored, computed on query. Fast to build, slow to query on large data. <code>table</code>: dbt runs the query and stores results — slow to build, fast to query. Use table for marts, view for staging.'},
+        {q:'What is an incremental model in dbt?', a:'An incremental model only processes NEW or CHANGED rows instead of rebuilding the whole table. Configured with `materialized=\'incremental\'` and a filter like `WHERE updated_at > (SELECT MAX(updated_at) FROM {{ this }})`. Reduces build time drastically for large tables.'},
+        {q:'What does `dbt run --select +fct_claims` do?', a:'Runs the `fct_claims` model AND all its upstream dependencies (the `+` prefix). Useful for rebuilding a model and everything it depends on after a source change.'},
+        {q:'What is a dbt source vs a dbt model?', a:'A <b>source</b> is a raw table that dbt reads but doesn\'t own (defined in sources.yml). A <b>model</b> is a transformation dbt builds and manages. Always reference sources with `{{ source() }}` and models with `{{ ref() }}`.'}
+      ],
+      quiz:[
+        {q:'You want a dbt model to only process rows added in the last run (not rebuild from scratch). Which materialization do you use?',opts:['view','table','incremental','ephemeral'],ans:2,exp:'`incremental` materialization adds only new/changed rows to an existing table. This is critical for large production tables — rebuilding from scratch every run would be too slow and expensive.'},
+        {q:'What command runs ALL tests defined in your dbt project?',opts:['dbt validate','dbt test','dbt check','dbt verify'],ans:1,exp:'`dbt test` runs all schema tests (unique, not_null, etc.) and custom tests. Use `dbt test --select model_name` to test a specific model.'},
+        {q:'In dbt, what is the correct way to reference another model called "stg_policies"?',opts:["SELECT * FROM stg_policies","SELECT * FROM {{ source('raw','stg_policies') }}","SELECT * FROM {{ ref('stg_policies') }}","SELECT * FROM raw.stg_policies"],ans:2,exp:'Always use `{{ ref(\'model_name\') }}` to reference other dbt models. This lets dbt track dependencies, handle environment-specific schemas, and build in the correct order.'},
+        {q:'Which dbt command generates and serves documentation locally?',opts:['dbt describe','dbt docs generate && dbt docs serve','dbt explain','dbt readme'],ans:1,exp:'`dbt docs generate` compiles the docs site, `dbt docs serve` hosts it locally at localhost:8080. The docs include lineage graphs, model descriptions, and test results.'}
+      ],
+      challenges:[
+        {title:'Fix the Broken dbt Model Reference',scenario:'This dbt model fails with "Relation not found". Pick the corrected version:',opts:[
+          `SELECT c.claim_id, p.policy_type\nFROM raw.stg_claims c\nJOIN raw.stg_policies p ON c.policy_id = p.policy_id`,
+          `{{ config(materialized='table') }}\nSELECT c.claim_id, p.policy_type\nFROM {{ ref('stg_claims') }} c\nJOIN {{ ref('stg_policies') }} p ON c.policy_id = p.policy_id`,
+          `SELECT c.claim_id, p.policy_type\nFROM {{ source('stg_claims') }} c\nJOIN {{ source('stg_policies') }} p USING (policy_id)`,
+          `{% set claims = ref('stg_claims') %}\nSELECT * FROM claims`
+        ],ans:1,exp:'Option B is correct: uses `{{ ref() }}` for both model references and includes the `config()` block. Option A hardcodes the schema name (breaks in different environments). Option C misuses `source()` which is for raw tables, not dbt models.'}
+      ]
+    },
+    {
+      id:'p2m3', title:'dbt Advanced + CI/CD', difficulty:3,
+      learn:[
+        {h:'Jinja Macros', p:`Macros are reusable Jinja functions in dbt — like Python functions for SQL. Define once in /macros, call anywhere.`,
+         code:`-- macros/cents_to_dollars.sql
+{% macro cents_to_dollars(column_name) %}
+    ({{ column_name }} / 100.0)::DECIMAL(12,2)
+{% endmacro %}
+
+-- Use in any model:
+SELECT
+    {{ cents_to_dollars('premium_cents') }} AS premium_amount
+FROM {{ ref('stg_policies') }}`},
+        {h:'Snapshots for SCD Type 2', p:`dbt snapshots automatically implement SCD Type 2 — tracking historical changes to source tables.`,
+         code:`-- snapshots/snap_customers.sql
+{% snapshot snap_customers %}
+{{
+    config(
+        target_schema='snapshots',
+        unique_key='customer_id',
+        strategy='timestamp',
+        updated_at='updated_at'
+    )
+}}
+SELECT * FROM {{ source('raw', 'customers') }}
+{% endsnapshot %}`},
+        {h:'CI/CD with dbt Cloud + GitHub Actions', p:`Run dbt tests automatically on every PR. Only merge if tests pass.`,
+         code:`# .github/workflows/dbt_ci.yml
+on: [pull_request]
+jobs:
+  dbt-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run dbt tests
+        run: |
+          pip install dbt-snowflake
+          dbt deps
+          dbt test --profiles-dir profiles/`},
+        {h:'Resources', refs:['https://docs.getdbt.com/docs/building-a-dbt-project/jinja-macros — dbt Jinja & Macros', 'https://docs.getdbt.com/docs/deploy/ci-cd — dbt CI/CD Setup']}
+      ],
+      flashcards:[
+        {q:'What is a dbt snapshot?', a:'A dbt feature that implements SCD Type 2 automatically. It checks a source table for changes and inserts new rows with `dbt_valid_from` / `dbt_valid_to` timestamps, preserving full history.'},
+        {q:'What is the `{{ this }}` variable in an incremental dbt model?', a:'`{{ this }}` refers to the model\'s own table in the database. Used in the incremental filter to get the current max timestamp: `WHERE updated_at > (SELECT MAX(updated_at) FROM {{ this }})`.'},
+        {q:'What is a dbt package?', a:'A reusable collection of macros, models, and tests shared via dbt Hub (hub.getdbt.com). Key packages: `dbt-utils` (common macros), `dbt-expectations` (advanced tests), `dbt-audit-helper` (comparing model changes).'}
+      ],
+      quiz:[
+        {q:'Which dbt feature is used to implement SCD Type 2 tracking?',opts:['dbt seeds','dbt snapshots','dbt macros','dbt exposures'],ans:1,exp:'dbt snapshots automatically track row-level changes in source tables, adding valid_from/valid_to columns to capture history — SCD Type 2 with minimal code.'},
+        {q:'What does `dbt deps` do?',opts:['Runs dependencies check','Installs packages defined in packages.yml','Deploys to production','Lists model dependencies'],ans:1,exp:'`dbt deps` installs the packages listed in `packages.yml` (like pip install for dbt). Always run it after cloning a dbt project or adding new packages.'},
+        {q:'What is the purpose of `profiles.yml` in dbt?',opts:['Defines model materialization','Stores connection credentials for each environment (dev, prod)','Lists dbt packages','Contains test definitions'],ans:1,exp:'`profiles.yml` stores connection details (Snowflake account, database, warehouse, credentials) for each environment. Keep it outside the project directory and NEVER commit it to Git.'}
+      ],
+      challenges:[
+        {title:'Write the Correct Incremental Filter',scenario:'Your incremental model needs to only load rows where `load_timestamp` is newer than what\'s already in the table. Which code is correct?',opts:[
+          `WHERE load_timestamp > NOW()`,
+          `{% if is_incremental() %}\n  WHERE load_timestamp > (\n    SELECT MAX(load_timestamp) FROM {{ this }}\n  )\n{% endif %}`,
+          `WHERE load_timestamp = CURRENT_DATE`,
+          `LIMIT 1000`
+        ],ans:1,exp:'Option B is the standard dbt incremental pattern: the `{% if is_incremental() %}` block only adds the WHERE filter on incremental runs (not on first full build). `{{ this }}` references the existing table to get the current max timestamp.'}
+      ]
+    }
+  ]
+},
+{
+  id:'p3', title:'Phase 3: AWS Data Engineering', weeks:'Weeks 6–8', icon:'☁️', color:'var(--phase3)', badgeId:'b3',
+  modules:[
+    {
+      id:'p3m1', title:'AWS Core Services for DE', difficulty:2,
+      learn:[
+        {h:'The AWS Data Stack', p:`AWS is in 60% of DE job descriptions. The core services you need: <b>S3</b> (data lake storage), <b>Glue</b> (ETL), <b>Redshift</b> (warehouse), <b>Lambda</b> (serverless triggers), <b>Athena</b> (S3 querying), <b>Step Functions</b> (orchestration).`},
+        {h:'S3 — The Data Lake Foundation', p:`Everything flows through S3. Raw files land in S3, Glue reads from S3, Redshift loads from S3. Organize with a medallion-style prefix structure: \`raw/\`, \`processed/\`, \`curated/\`.`,
+         code:`import boto3
+
+s3 = boto3.client('s3')
+
+# Upload file to S3
+s3.upload_file('claims_2025.csv', 'my-data-lake', 'raw/claims/2025/claims_2025.csv')
+
+# List objects with prefix
+response = s3.list_objects_v2(Bucket='my-data-lake', Prefix='raw/claims/2025/')
+for obj in response['Contents']:
+    print(obj['Key'], obj['Size'])`},
+        {h:'AWS Glue — Serverless ETL', p:`Glue is serverless PySpark. You write PySpark code, Glue handles the cluster. Key concepts: <b>Data Catalog</b> (metadata store), <b>Crawlers</b> (auto-schema discovery), <b>Glue Jobs</b> (PySpark ETL scripts).`,
+         code:`# AWS Glue PySpark job
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+
+# Read from S3 (Glue DynamicFrame)
+datasource = glueContext.create_dynamic_frame.from_catalog(
+    database="raw_db", table_name="claims"
+)
+
+# Transform
+df = datasource.toDF()
+df_clean = df.filter(df.claim_amount > 0).dropDuplicates(['claim_id'])
+
+# Write to Redshift
+glueContext.write_dynamic_frame.from_jdbc_conf(
+    frame=DynamicFrame.fromDF(df_clean, glueContext, "df_clean"),
+    catalog_connection="redshift-conn",
+    connection_options={"dbtable": "analytics.claims", "database": "dwh"}
+)`},
+        {h:'Lambda — Event-Driven Triggers', p:`Lambda functions trigger on S3 events (file arrives → start pipeline), schedule runs, or respond to API calls. Keep Lambda functions small — orchestrate, don't process large data in Lambda.`},
+        {h:'Resources', refs:['https://aws.amazon.com/glue/ — AWS Glue Overview', 'https://docs.aws.amazon.com/athena/latest/ug/what-is.html — Amazon Athena Docs', 'https://boto3.amazonaws.com/v1/documentation/api/latest/index.html — Boto3 Python Docs']}
+      ],
+      flashcards:[
+        {q:'What is the AWS Glue Data Catalog?', a:'A centralized metadata repository that stores table definitions, schemas, and partition info for data in S3. Works with Athena, Redshift Spectrum, and EMR. Think of it as a Hive Metastore for AWS.'},
+        {q:'What is Amazon Athena?', a:'A serverless SQL engine that queries data directly in S3 without loading it first. Uses the Glue Data Catalog for schemas. Pay per query (per TB scanned). Great for ad-hoc analysis on raw S3 data.'},
+        {q:'What is the difference between AWS Glue and AWS Lambda for ETL?', a:'<b>Glue:</b> For large-scale data processing (GB-TB), runs PySpark, billed per DPU hour. <b>Lambda:</b> For lightweight event-driven tasks, max 15 min runtime, limited memory. Use Lambda to trigger Glue, not to process large files.'},
+        {q:'What is an S3 event notification?', a:'A trigger that fires when something happens in S3 (object created, deleted). Can invoke Lambda, send to SQS, or notify SNS. Used to build event-driven pipelines: file lands → Lambda triggers Glue job → data loaded.'},
+        {q:'What is Amazon Redshift Spectrum?', a:'Extends Redshift queries to S3 data without loading it. Lets you JOIN Redshift warehouse tables with raw S3 files in one query. Uses the Glue Data Catalog for S3 table definitions.'}
+      ],
+      quiz:[
+        {q:'You need to automatically start an AWS Glue job every time a new CSV file is uploaded to S3. What is the correct architecture?',opts:['S3 → Redshift → Glue','S3 Event → Lambda → trigger Glue Job','Scheduled CloudWatch → S3 → Glue','EC2 polls S3 → Glue'],ans:1,exp:'S3 event notification → Lambda → start Glue job is the standard serverless event-driven pattern. Lambda is triggered by the S3 upload event and calls glue.start_job_run() via boto3.'},
+        {q:'What AWS service would you use to query CSV files directly in S3 with SQL, without loading them?',opts:['Amazon RDS','AWS Glue','Amazon Athena','AWS DMS'],ans:2,exp:'Athena is serverless SQL on S3. You define a table schema in the Glue Catalog, then SELECT directly against S3 files. No data movement required. Pay only for data scanned.'},
+        {q:'What does a Glue Crawler do?',opts:['Runs ETL jobs on a schedule','Automatically scans S3 (or other sources) to infer schemas and populate the Data Catalog','Monitors pipeline failures','Compresses S3 files'],ans:1,exp:'A Glue Crawler scans your data source, infers the schema (column names, types, partitions), and writes this metadata to the Glue Data Catalog — making the data queryable by Athena, Glue jobs, and Redshift Spectrum.'},
+        {q:'What Python library do you use to interact with AWS services programmatically?',opts:['awscli','boto3','pyaws','aws-sdk'],ans:1,exp:'boto3 is the official AWS SDK for Python. Use it to interact with S3, Glue, Lambda, Redshift, Step Functions, and all other AWS services from your Python pipelines.'}
+      ],
+      challenges:[
+        {title:'Write the Correct boto3 S3 Upload',scenario:'You need to upload a local file `claims_jan.parquet` to S3 bucket `data-lake-prod` under path `raw/claims/2025/01/`. Pick the correct boto3 call:',opts:[
+          `s3 = boto3.resource('s3')\ns3.put('claims_jan.parquet', 'data-lake-prod')`,
+          `s3 = boto3.client('s3')\ns3.upload_file(\n    'claims_jan.parquet',\n    'data-lake-prod',\n    'raw/claims/2025/01/claims_jan.parquet'\n)`,
+          `s3 = boto3.client('s3')\ns3.push_file('claims_jan.parquet', Bucket='data-lake-prod')`,
+          `aws s3 cp claims_jan.parquet s3://data-lake-prod/raw/claims/2025/01/`
+        ],ans:1,exp:'Option B is the correct boto3 `upload_file(local_path, bucket, s3_key)` call. Option A uses `put()` which doesn\'t exist. Option C uses `push_file()` which doesn\'t exist. Option D is CLI syntax, not Python boto3.'}
+      ]
+    },
+    {
+      id:'p3m2', title:'Airflow Advanced + CI/CD', difficulty:3,
+      learn:[
+        {h:'Advanced DAG Patterns', p:`You already know Airflow basics. Level up: XComs for passing data between tasks, Sensors for waiting on external conditions, dynamic DAG generation, and the TaskFlow API.`,
+         code:`from airflow.decorators import dag, task
+from datetime import datetime
+
+@dag(schedule='@daily', start_date=datetime(2025,1,1), catchup=False)
+def insurance_pipeline():
+
+    @task
+    def extract_claims() -> list:
+        # Returns data via XCom automatically
+        return fetch_from_api()
+
+    @task
+    def transform(claims: list) -> list:
+        return [clean(c) for c in claims]
+
+    @task
+    def load(records: list):
+        upload_to_snowflake(records)
+
+    load(transform(extract_claims()))
+
+dag = insurance_pipeline()`},
+        {h:'S3 Sensor — Wait for File', p:``,
+         code:`from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
+
+wait_for_file = S3KeySensor(
+    task_id='wait_for_claims_file',
+    bucket_name='data-lake-prod',
+    bucket_key='raw/claims/{{ ds }}/claims.parquet',
+    aws_conn_id='aws_default',
+    poke_interval=60,   # check every 60 seconds
+    timeout=3600,       # fail after 1 hour
+)`},
+        {h:'CI/CD: Lint + Test DAGs on Push', p:``,
+         code:`# .github/workflows/airflow_ci.yml
+on: [push, pull_request]
+jobs:
+  validate-dags:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install apache-airflow flake8
+      - name: Lint DAGs
+        run: flake8 dags/ --max-line-length=120
+      - name: Validate DAG imports
+        run: python -c "from dags.claims_pipeline import dag; print('DAG OK')"
+      - name: Check for cycles
+        run: python -c "
+import airflow; from dags.claims_pipeline import dag
+dag.test_cycle(); print('No cycles found')"
+`},
+        {h:'Resources', refs:['https://airflow.apache.org/docs/apache-airflow/stable/index.html — Airflow Official Docs', 'https://www.astronomer.io/guides/ — Astronomer Airflow Guides']}
+      ],
+      flashcards:[
+        {q:'What is an XCom in Airflow?', a:'Cross-communication mechanism between tasks. Tasks can push values to XCom (xcom_push) and other tasks pull them (xcom_pull). With TaskFlow API, XComs are handled automatically via function return values. Use for small data only — not DataFrames.'},
+        {q:'What is the difference between a Sensor and an Operator in Airflow?', a:'An <b>Operator</b> performs an action (run SQL, call API, trigger Glue). A <b>Sensor</b> waits for a condition to be true (file exists in S3, table has new rows) before allowing downstream tasks to run.'},
+        {q:'What does `catchup=False` do in an Airflow DAG?', a:'Prevents Airflow from backfilling all missed runs between the `start_date` and today. Without this, a DAG with `start_date=2020-01-01` and daily schedule would try to run thousands of historical runs immediately.'},
+        {q:'What is the KubernetesPodOperator used for?', a:'Runs a task inside a Docker container on Kubernetes. Provides full environment isolation for each task — each task gets its own container with its own dependencies. Best for production pipelines.'}
+      ],
+      quiz:[
+        {q:'An Airflow DAG needs to wait for a partner file to arrive in S3 before processing. Which task type should you use?',opts:['PythonOperator','S3KeySensor','BashOperator','TriggerDagRunOperator'],ans:1,exp:'S3KeySensor polls S3 for a specific key (file path) and only succeeds (allowing downstream tasks) when the file exists. Set poke_interval and timeout appropriately for production.'},
+        {q:'What is the best way to pass a Snowflake connection string in an Airflow DAG?',opts:['Hardcode it in the DAG file','Store it in an Airflow Connection (Admin → Connections) and reference by conn_id','Put it in a Python variable at the top of the file','Pass it as a DAG parameter'],ans:1,exp:'Always use Airflow Connections (stored in the metadata DB, encrypted) and reference them by connection ID. Never hardcode credentials in DAG files — they\'ll be visible in version control.'},
+        {q:'What does the `@daily` schedule in a DAG mean?',opts:['Runs every 24 hours from when the DAG is turned on','Runs at midnight UTC every day (equivalent to `0 0 * * *`)','Runs once when deployed','Runs every day at 9 AM local time'],ans:1,exp:'`@daily` is equivalent to cron `0 0 * * *` — runs at midnight UTC. Airflow uses UTC by default. If you need a specific local time, use explicit cron syntax and account for the timezone offset.'}
+      ],
+      challenges:[
+        {title:'Fix the Broken Airflow DAG',scenario:'This DAG fails with "Task not found" error on dependency setting. Pick the corrected version:',opts:[
+          `extract >> transform\ntransform >> load\nextract >> load`,
+          `extract.set_downstream(transform)\ntransform.set_downstream(load)`,
+          `extract >> transform >> load`,
+          `[extract, transform, load]`
+        ],ans:2,exp:'Option C is the cleanest correct syntax: `extract >> transform >> load` chains tasks in sequence using the bitshift operator. Option A creates a diamond dependency (extract → load directly, skipping transform). Option B is valid but verbose. Option D just creates a list, not a dependency chain.'}
+      ]
+    }
+  ]
+},
+{
+  id:'p4', title:'Phase 4: Databricks + PySpark', weeks:'Weeks 9–10', icon:'⚡', color:'var(--phase4)', badgeId:'b4',
+  modules:[
+    {
+      id:'p4m1', title:'PySpark Core', difficulty:3,
+      learn:[
+        {h:'Why PySpark for BFSI Roles', p:`Your insurance domain background is a direct match for BFSI Databricks roles. PySpark is required in 50% of DE JDs — especially for processing large-scale financial datasets (policy records, transaction logs, claims history).`},
+        {h:'DataFrames — The Core API', p:`PySpark DataFrames are distributed tables processed across a cluster. The API looks like pandas but executes across many machines.`,
+         code:`from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, when, sum, round
+
+spark = SparkSession.builder.appName("ClaimsAnalysis").getOrCreate()
+
+# Read from S3 / ADLS
+df = spark.read.parquet("s3://data-lake/raw/claims/2025/")
+
+# Transform
+df_clean = (df
+    .filter(col("claim_amount") > 0)
+    .withColumn("risk_tier",
+        when(col("claim_amount") > 50000, "HIGH")
+        .when(col("claim_amount") > 10000, "MEDIUM")
+        .otherwise("LOW")
+    )
+    .dropDuplicates(["claim_id"])
+)
+
+# Aggregate
+summary = (df_clean
+    .groupBy("region", "risk_tier")
+    .agg(
+        sum("claim_amount").alias("total_claims"),
+        round(sum("claim_amount") / 1e6, 2).alias("total_claims_M")
+    )
+    .orderBy("region", "risk_tier")
+)
+summary.show()`},
+        {h:'Spark SQL', p:`You can write pure SQL on DataFrames using Spark SQL — great for data engineers comfortable with SQL-first thinking.`,
+         code:`# Register as temp view
+df_clean.createOrReplaceTempView("claims")
+
+result = spark.sql("""
+    SELECT region,
+           policy_type,
+           COUNT(*) as claim_count,
+           SUM(claim_amount) as total_amount
+    FROM claims
+    WHERE status = 'approved'
+    GROUP BY region, policy_type
+    ORDER BY total_amount DESC
+""")`},
+        {h:'Performance Tuning', p:`Key tuning concepts: <b>Partitioning</b> — partition large DataFrames by a column (date, region) to reduce shuffles. <b>Caching</b> — cache frequently reused DataFrames. <b>Broadcast joins</b> — broadcast small tables to avoid costly shuffles.`,
+         code:`# Cache a DataFrame used multiple times
+df_clean.cache()
+
+# Broadcast a small lookup table
+from pyspark.sql.functions import broadcast
+df_enriched = df_clean.join(broadcast(dim_region), on="region_id")`},
+        {h:'Resources', refs:['https://spark.apache.org/docs/latest/api/python/ — PySpark Official Documentation', 'https://www.databricks.com/glossary/pyspark — PySpark Introduction']}
+      ],
+      flashcards:[
+        {q:'What is the difference between a transformation and an action in Spark?', a:'<b>Transformation:</b> lazy operation that builds a plan (filter, select, join) — no computation happens. <b>Action:</b> triggers actual computation (show(), count(), write()). Spark builds a DAG of transformations, then executes all at once when an action is called.'},
+        {q:'What is data skew in PySpark and how do you handle it?', a:'Skew = some partitions have much more data than others, causing slow tasks. Handle with: salting (add a random prefix to skewed keys), repartition, or broadcast join for small tables.'},
+        {q:'What does `repartition(n)` vs `coalesce(n)` do?', a:'<code>repartition(n)</code>: full shuffle, creates exactly n balanced partitions. <code>coalesce(n)</code>: reduces partitions with minimal shuffle (no full reshuffle). Use coalesce to reduce before writing; repartition to balance for heavy processing.'},
+        {q:'What is a broadcast join in PySpark?', a:'Sends a small table (e.g., a lookup/dimension table) to all executor nodes, avoiding a costly shuffle of the large table. Use when one table is small (< a few hundred MB). Trigger with `broadcast(df_small)`.'},
+        {q:'What does `explode()` do in PySpark?', a:'Converts an array/map column into multiple rows — one row per element. Example: a claims column with `[claim1, claim2]` becomes two separate rows. Opposite of `collect_list()`.'}
+      ],
+      quiz:[
+        {q:'A PySpark job is slow because one partition has 90% of the data. This is called:',opts:['Data corruption','Data skew','Schema mismatch','Lazy evaluation'],ans:1,exp:'Data skew occurs when partition sizes are very unbalanced. The entire job waits for the slowest (largest) partition. Fix with salting, repartition, or broadcast joins.'},
+        {q:'At what point does Spark actually execute a transformation like `.filter()`?',opts:['Immediately when called','Only when an action like `.count()` or `.write()` is called','When `.cache()` is called','Never — transformations are always lazy'],ans:1,exp:'Spark is lazy. Transformations (filter, select, join, groupBy) build a logical plan but do nothing. Only actions (count, show, write, collect) trigger actual execution of the plan.'},
+        {q:'You have a 100GB DataFrame joined to a 5MB lookup table. What optimization should you apply?',opts:['Repartition the large DataFrame by 1000','Use broadcast() on the 5MB table','Cache both DataFrames','Use coalesce() before the join'],ans:1,exp:'Broadcast the small table: `df_large.join(broadcast(df_small), on="key")`. This sends the 5MB table to every node, avoiding a costly shuffle of the 100GB table.'},
+        {q:'Which PySpark function do you use to add or modify a column?',opts:['df.addColumn()','df.withColumn()','df.update()','df.set()'],ans:1,exp:'`withColumn(name, expression)` creates a new column or replaces an existing one. Example: `df.withColumn("amount_usd", col("amount_inr") / 83.5)`'}
+      ],
+      challenges:[
+        {title:'Fix the PySpark Aggregation',scenario:'You want total approved claim amounts grouped by region. Which code is correct?',opts:[
+          `df.groupBy("region").sum("claim_amount")`,
+          `df.filter(col("status")=="approved")\n  .groupBy("region")\n  .agg(sum("claim_amount").alias("total_approved"))\n  .orderBy("total_approved", ascending=False)`,
+          `df.select("region", sum("claim_amount"))`,
+          `df.WHERE(status='approved').GROUP_BY(region).SUM(claim_amount)`
+        ],ans:1,exp:'Option B is correct: filters first (reduce data early), then groupBy + agg with a proper alias. Option A is missing the filter and uses shorthand sum() which doesn\'t alias. Option C puts an aggregation in select incorrectly. Option D is invalid Python.'}
+      ]
+    },
+    {
+      id:'p4m2', title:'Delta Lake & Databricks', difficulty:3,
+      learn:[
+        {h:'Delta Lake — ACID on S3/ADLS', p:`Delta Lake adds ACID transactions, schema enforcement, and time travel to your data lake. It is the default storage format on Databricks. All BFSI Databricks roles require Delta Lake knowledge.`},
+        {h:'Medallion Architecture', p:`The Bronze/Silver/Gold layered architecture is the standard Databricks pattern. You will see this in every BFSI/insurance Databricks JD.`,
+         code:`# BRONZE: raw data, ingested as-is
+df_raw.write.format("delta").mode("append").save("/mnt/bronze/claims/")
+
+# SILVER: cleaned, deduplicated, conformed
+df_silver = (spark.read.format("delta").load("/mnt/bronze/claims/")
+    .dropDuplicates(["claim_id"])
+    .filter(col("claim_amount") > 0)
+    .withColumn("ingested_at", current_timestamp())
+)
+df_silver.write.format("delta").mode("overwrite").save("/mnt/silver/claims/")
+
+# GOLD: aggregated, business-ready
+df_gold = (spark.read.format("delta").load("/mnt/silver/claims/")
+    .groupBy("region", "product_type")
+    .agg(sum("claim_amount").alias("total_claims"))
+)
+df_gold.write.format("delta").mode("overwrite").save("/mnt/gold/claims_summary/")`},
+        {h:'MERGE (Upsert) in Delta Lake', p:`MERGE implements upsert logic — update existing rows, insert new ones. Essential for CDC (Change Data Capture) pipelines.`,
+         code:`from delta.tables import DeltaTable
+
+target = DeltaTable.forPath(spark, "/mnt/silver/customers/")
+
+target.alias("t").merge(
+    df_updates.alias("s"),
+    "t.customer_id = s.customer_id"
+).whenMatchedUpdateAll(
+).whenNotMatchedInsertAll(
+).execute()`},
+        {h:'Delta Lake Time Travel', p:`Query data at any point in history. Essential for debugging bad loads and regulatory audits in BFSI.`,
+         code:`# Query yesterday's version
+df = spark.read.format("delta")\
+    .option("versionAsOf", 5)\
+    .load("/mnt/silver/claims/")
+
+# Or by timestamp
+df = spark.read.format("delta")\
+    .option("timestampAsOf", "2025-01-15")\
+    .load("/mnt/silver/claims/")`},
+        {h:'Resources', refs:['https://delta.io/learn/ — Delta Lake Official Site', 'https://docs.databricks.com/lakehouse/medallion.html — Medallion Architecture']}
+      ],
+      flashcards:[
+        {q:'What does ACID stand for in Delta Lake?', a:'<b>A</b>tomicity (all or nothing), <b>C</b>onsistency (data always valid), <b>I</b>solation (concurrent writes don\'t interfere), <b>D</b>urability (committed data persists). Delta Lake brings these database guarantees to your data lake.'},
+        {q:'What is the Bronze/Silver/Gold architecture?', a:'<b>Bronze:</b> Raw data, ingested as-is, append-only. <b>Silver:</b> Cleaned, deduplicated, conformed types. <b>Gold:</b> Aggregated, business-ready for analytics. This is Databricks\' Medallion Architecture — standard in BFSI pipelines.'},
+        {q:'What does OPTIMIZE and Z-ORDER do in Delta Lake?', a:'<code>OPTIMIZE</code> compacts many small files into larger ones (improves read performance). <code>ZORDER BY (col)</code> co-locates related data in the same files, improving pruning for queries filtered on that column.'},
+        {q:'What is Delta Lake Time Travel?', a:'The ability to query data as it existed at a previous version or timestamp. Uses the Delta transaction log. Useful for auditing, debugging bad loads, and regulatory compliance (especially in BFSI/insurance).'},
+        {q:'What is Unity Catalog in Databricks?', a:'A unified governance layer for all data assets (tables, files, ML models) across all Databricks workspaces. Provides centralized access control, data lineage, and auditing. Required knowledge for senior Databricks DE roles.'}
+      ],
+      quiz:[
+        {q:'You accidentally loaded corrupted data into a Delta table. How do you recover?',opts:['Drop and recreate the table','Use Time Travel to query a previous version and overwrite','Call AWS support','Restore from S3 backup manually'],ans:1,exp:'Delta Lake Time Travel: `spark.read.format("delta").option("versionAsOf", N)` to read a clean version, then write it back. Or use `RESTORE TABLE` command directly. Much faster than manual S3 recovery.'},
+        {q:'What is the MERGE command in Delta Lake used for?',opts:['Merging two Delta Lake catalogs','Upsert — update matching rows, insert new rows in one atomic operation','Compacting small files','Merging two Databricks workspaces'],ans:1,exp:'MERGE (or DeltaTable.merge() in Python) is the upsert pattern: update rows that match a condition, insert rows that don\'t exist yet. Critical for CDC and SCD Type 1 implementations.'},
+        {q:'At which layer in Medallion Architecture would you apply business transformations and aggregations?',opts:['Bronze','Silver','Gold','Platinum'],ans:2,exp:'Gold layer contains the final, aggregated, business-ready datasets — like fact tables and KPI summaries. Bronze = raw. Silver = clean/conformed. Gold = analytics-ready.'},
+        {q:'What does `VACUUM` do in Delta Lake?',opts:['Compresses Delta files','Removes old file versions beyond the retention period to reclaim storage','Validates Delta table schema','Rebuilds the transaction log'],ans:1,exp:'VACUUM removes files that are no longer referenced by the Delta table and are older than the retention threshold (default 7 days). This reclaims storage. Note: VACUUM removes Time Travel history for deleted files.'}
+      ],
+      challenges:[
+        {title:'Write the Correct Delta Upsert',scenario:'New customer records arrive daily. Existing customers may have updated their phone numbers. Pick the correct MERGE pattern:',opts:[
+          `spark.read.format("delta").load(path).union(df_new)`,
+          `DeltaTable.forPath(spark, path).alias("t")\n  .merge(df_new.alias("s"), "t.customer_id = s.customer_id")\n  .whenMatchedUpdateAll()\n  .whenNotMatchedInsertAll()\n  .execute()`,
+          `df_new.write.format("delta").mode("overwrite").save(path)`,
+          `INSERT INTO delta_table SELECT * FROM df_new`
+        ],ans:1,exp:'Option B is the correct Delta MERGE upsert: match on customer_id, update all columns for existing customers, insert new ones. Option A just appends (creates duplicates). Option C overwrites everything (destroys existing data). Option D is not valid PySpark.'}
+      ]
+    }
+  ]
+},
+{
+  id:'p5', title:'Phase 5: MLOps + Portfolio', weeks:'Weeks 11–12', icon:'🤖', color:'var(--phase5)', badgeId:'b5',
+  modules:[
+    {
+      id:'p5m1', title:'FastAPI for Data APIs', difficulty:3,
+      learn:[
+        {h:'Why Data Engineers Need FastAPI', p:`The MLOps/GenAI DE role is the fastest-growing. Building REST APIs that serve data from Snowflake or serve ML model predictions is now a core DE skill. FastAPI is the modern standard — faster than Flask, auto-generates docs.`},
+        {h:'Building a Data API', p:``,
+         code:`from fastapi import FastAPI, HTTPException
+from typing import List
+import snowflake.connector
+import os
+
+app = FastAPI(title="Insurance Data API")
+
+def get_snowflake_conn():
+    return snowflake.connector.connect(
+        account=os.environ["SNOWFLAKE_ACCOUNT"],
+        user=os.environ["SNOWFLAKE_USER"],
+        password=os.environ["SNOWFLAKE_PASSWORD"],
+        database="ANALYTICS", schema="MARTS"
+    )
+
+@app.get("/claims/{region}", response_model=List[dict])
+def get_claims_by_region(region: str, limit: int = 100):
+    conn = get_snowflake_conn()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT claim_id, claim_amount, status FROM fct_claims WHERE region = %s LIMIT %s",
+        (region.upper(), limit)
+    )
+    rows = cursor.fetchall()
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No claims for region {region}")
+    return [{"claim_id": r[0], "amount": r[1], "status": r[2]} for r in rows]
+
+# Run: uvicorn main:app --reload
+# Auto docs at: http://localhost:8000/docs`},
+        {h:'Containerize with Docker', p:``,
+         code:`# Dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install fastapi uvicorn snowflake-connector-python
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]`},
+        {h:'Resources', refs:['https://fastapi.tiangolo.com/ — FastAPI Official Docs', 'https://pydantic-docs.helpmanual.io/ — Pydantic Documentation']}
+      ],
+      flashcards:[
+        {q:'What does FastAPI automatically generate from your code?', a:'Interactive API documentation (Swagger UI at /docs and ReDoc at /redoc). Auto-generates from type hints and docstrings — no extra work needed. Also validates request/response data types automatically.'},
+        {q:'What is the difference between FastAPI and Flask for data APIs?', a:'FastAPI is async-native, 2-3x faster, has automatic data validation via Pydantic, and auto-generates OpenAPI docs. Flask is synchronous by default and requires extensions for these features. FastAPI is the modern choice for data APIs.'},
+        {q:'How should you handle database credentials in a FastAPI app?', a:'Use environment variables (os.environ["KEY"]) or a `.env` file with python-dotenv. Never hardcode credentials. In production, use AWS Secrets Manager, Azure Key Vault, or Kubernetes secrets.'}
+      ],
+      quiz:[
+        {q:'What decorator creates a GET endpoint at `/data/claims` in FastAPI?',opts:['@app.route("/data/claims")','@app.get("/data/claims")','@app.endpoint("/data/claims")','@get("/data/claims")'],ans:1,exp:'`@app.get(path)` defines a GET endpoint in FastAPI. Similarly: `@app.post()`, `@app.put()`, `@app.delete()`. The function below the decorator handles the request.'},
+        {q:'Where can you test a FastAPI endpoint interactively after running the server?',opts:['localhost:8000/test','localhost:8000/docs (Swagger UI)','localhost:8000/api','localhost:8000/debug'],ans:1,exp:'FastAPI auto-generates Swagger UI at /docs. You can test all endpoints, see request/response schemas, and try requests directly in the browser — no Postman needed.'},
+        {q:'What is Pydantic used for in FastAPI?',opts:['Database ORM','Data validation and serialization — defines request/response schemas with type enforcement','Frontend rendering','Authentication'],ans:1,exp:'Pydantic models define the shape and types of your API\'s request bodies and responses. FastAPI uses them to automatically validate input, serialize output, and generate documentation.'}
+      ],
+      challenges:[
+        {title:'Fix the FastAPI Route',scenario:'A colleague wrote a POST endpoint to receive claim data. It crashes on startup. Pick the corrected version:',opts:[
+          `@app.post("/claims")\ndef receive_claim(data):\n    return {"received": data}`,
+          `from pydantic import BaseModel\nclass Claim(BaseModel):\n    claim_id: str\n    amount: float\n    status: str\n\n@app.post("/claims")\ndef receive_claim(claim: Claim):\n    return {"received": claim.dict()}`,
+          `@app.get("/claims")\ndef post_claim(claim_id, amount):\n    return claim_id`,
+          `def receive_claim():\n    @app.post("/claims")\n    return {}`
+        ],ans:1,exp:'Option B is correct: defines a Pydantic model for type validation, uses the correct @app.post() decorator, and injects the typed model as a parameter. Option A lacks type annotation (FastAPI can\'t validate). Option C uses @app.get for a POST operation. Option D has the decorator inside the function.'}
+      ]
+    },
+    {
+      id:'p5m2', title:'LLM APIs + RAG Pipelines', difficulty:4,
+      learn:[
+        {h:'The GenAI Data Engineer Role', p:`The GenAI/AI Data Engineer role combines classic DE skills (pipelines, warehouses) with LLM integration. You build the data infrastructure that feeds AI systems. Key skills: calling LLM APIs, building RAG pipelines, vector databases.`},
+        {h:'Calling LLM APIs', p:``,
+         code:`from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+# Simple completion
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a data engineering assistant."},
+        {"role": "user", "content": "Write a PySpark job to deduplicate claims by claim_id."}
+    ],
+    max_tokens=500
+)
+print(response.choices[0].message.content)`},
+        {h:'RAG Pipeline — Retrieval Augmented Generation', p:`RAG grounds LLM responses in your actual data. Architecture: chunk documents → embed → store in vector DB → on query, retrieve relevant chunks → pass to LLM.`,
+         code:`# Simple RAG with LangChain + Snowflake
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+
+# 1. Embed documents
+embeddings = OpenAIEmbeddings()
+vectorstore = FAISS.from_texts(policy_docs, embeddings)
+
+# 2. Create retriever
+retriever = vectorstore.as_retriever(search_k=3)
+
+# 3. QA chain
+qa = RetrievalQA.from_chain_type(
+    llm=ChatOpenAI(model="gpt-4o-mini"),
+    retriever=retriever
+)
+answer = qa.run("What is the deductible for home insurance policy H-2025-001?")`},
+        {h:'Resources', refs:['https://python.langchain.com/docs/get_started/introduction — LangChain Docs', 'https://platform.openai.com/docs/ — OpenAI API Documentation']}
+      ],
+      flashcards:[
+        {q:'What is RAG (Retrieval Augmented Generation)?', a:'A technique that enhances LLM responses by first retrieving relevant documents from a vector database, then passing them as context to the LLM. Prevents hallucination and lets the LLM answer questions about your private data.'},
+        {q:'What is a vector database?', a:'A database optimized for storing and searching embeddings (high-dimensional vectors). Given a query vector, it finds the most similar stored vectors. Examples: Pinecone, Chroma, FAISS, Databricks Vector Search, pgvector.'},
+        {q:'What is an embedding in the context of GenAI pipelines?', a:'A numeric vector representation of text (or other data) that captures semantic meaning. Similar texts have similar embeddings. Used to find relevant documents in RAG, enable semantic search, and power recommendation systems.'}
+      ],
+      quiz:[
+        {q:'What problem does RAG solve in LLM applications?',opts:['Slow inference speed','LLMs hallucinating or not knowing about your private/recent data','High API costs','Language translation'],ans:1,exp:'LLMs are trained on public data up to a cutoff date. RAG grounds responses in YOUR specific documents (policy PDFs, internal wikis, claims data) by retrieving relevant context at query time.'},
+        {q:'What is the first step in building a RAG pipeline?',opts:['Fine-tune the LLM','Chunk and embed your documents into a vector store','Build a FastAPI endpoint','Train a classifier'],ans:1,exp:'Step 1 is ingestion: split documents into chunks, generate embeddings for each chunk, and store in a vector database. Steps 2+ handle retrieval and generation at query time.'},
+        {q:'Which Databricks feature provides built-in vector search for RAG?',opts:['Delta Lake','Unity Catalog','Databricks Vector Search','MLflow'],ans:2,exp:'Databricks Vector Search (part of Mosaic AI) is a managed vector database integrated with Delta Lake. Store embeddings alongside your data in the lakehouse and query them for RAG applications.'}
+      ],
+      challenges:[
+        {title:'Fix the LLM API Call',scenario:'This OpenAI call crashes with an AuthenticationError. Pick the secure, correct version:',opts:[
+          `client = OpenAI(api_key="sk-proj-abc123def456")\nresponse = client.chat.completions.create(model="gpt-4o", messages=[{"role":"user","content":"hi"}])`,
+          `import os\nclient = OpenAI(api_key=os.environ["OPENAI_API_KEY"])\nresponse = client.chat.completions.create(\n  model="gpt-4o-mini",\n  messages=[{"role":"user","content":"hi"}]\n)`,
+          `client = OpenAI()\nresponse = client.completions.create(prompt="hi", max_tokens=10)`,
+          `response = requests.post("https://api.openai.com", data={"prompt":"hi"})`
+        ],ans:1,exp:'Option B is correct: reads the API key from an environment variable (secure), uses the newer chat.completions.create() method with the correct messages format. Option A hardcodes the key (security violation). Option C uses the old completions API. Option D uses raw requests without proper auth headers.'}
+      ]
+    },
+    {
+      id:'p5m3', title:'Resume & Portfolio Strategy', difficulty:1,
+      learn:[
+        {h:'Your 3 Portfolio Projects', p:`By Week 12, you need 3 complete GitHub projects. Recruiters spend 2–3 minutes on your GitHub. Make it count.`},
+        {h:'Project 1: Airflow + Snowflake + dbt', p:`ETL pipeline: ingest a public dataset (NYC Taxi or COVID data) → land in Snowflake → transform with dbt → Star Schema Gold layer. Add a GitHub Actions CI workflow that runs dbt tests on PR.`},
+        {h:'Project 2: AWS Glue + Redshift', p:`Cloud-native pipeline: upload CSV to S3 → trigger Lambda → run Glue job (PySpark) → load to Redshift → query with Athena. Use boto3, document with a README.`},
+        {h:'Project 3: Databricks Delta Lake', p:`Medallion Architecture: ingest raw data → Bronze Delta table → Silver (cleaned, deduped) → Gold (aggregated KPIs). Include MERGE upsert and Time Travel query. Deploy on Databricks Community Edition.`},
+        {h:'Your Rewritten Resume Summary', p:`Use this exact rewrite from your guide: "Data Engineer with 2+ years building ETL pipelines for US insurance clients. Strong in Python, SQL, and Apache Airflow. Led a 3-person DE team. Now deepening expertise in Snowflake, dbt, and cloud-native pipelines to target senior data engineering roles."`,
+         code:`# ATS-Optimized Skills Section (copy this to your resume)
+Python · SQL (Advanced) · Apache Airflow · dbt · Snowflake
+AWS (S3, Glue, Redshift, Lambda) · PySpark · Delta Lake · Databricks
+Matillion ETL · Docker · Git · GitHub Actions · CI/CD
+Data Modeling (Star Schema, SCD Type 2) · Kimball Methodology
+Insurance Domain · BFSI · ETL/ELT Pipelines · Medallion Architecture`},
+        {h:'Where to Apply (Your Priority Order)', p:`1. Analytics Engineer roles (dbt + Snowflake) — fastest path. 2. AWS Data Engineer. 3. Core Data Engineer (Python + Airflow). Apply on: LinkedIn India, Naukri.com, Glassdoor India, Turing.com (USD pay).`},
+        {h:'Resources', refs:['https://github.com/ — Create an amazing GitHub Profile', 'https://rxresu.me/ — Free ATS-friendly Resume Builder']}
+      ],
+      flashcards:[
+        {q:'What is the recommended first role target based on your profile?', a:'Analytics Engineer (dbt + Snowflake) — 5-star fit. Your SQL strength + ETL background maps directly. 2–3 weeks to become interview-ready. Fastest path to a step-up role at ₹10–25 LPA.'},
+        {q:'What ATS keywords must appear on your DE resume?', a:'ETL, ELT, data pipeline, Apache Airflow, dbt, Snowflake, AWS Glue, PySpark, Delta Lake, CI/CD, Git, data modeling, Star Schema, SCD — these exact terms trigger recruiter keyword searches.'},
+        {q:'What is the biggest resume weakness to fix immediately?', a:'Bullets describe tools used, not impact. Rewrite: "Led 3-engineer DE team delivering ETL pipelines for US insurance client; owned Airflow scheduling; ensured on-time data delivery for reporting cycles."'},
+        {q:'What is Turing.com and why is it relevant for you?', a:'Remote platform connecting Indian developers with US companies. Pays in USD. Requires English fluency (your strength as a former professor). Requires 4-hour US timezone overlap. Fits 1–10 PM IST schedule.'}
+      ],
+      quiz:[
+        {q:'Which role should Panduranga target FIRST based on his current skills?',opts:['MLOps Engineer','Databricks Lead Engineer','Analytics Engineer (dbt + Snowflake)','Data Scientist'],ans:2,exp:'Analytics Engineer is the 5-star fit: SQL expertise + ETL background + 2-3 weeks of dbt/Snowflake learning = interview-ready. MLOps and Databricks Lead require more foundation-building first.'},
+        {q:'What salary range can you expect for an Analytics Engineer role in India (2025)?',opts:['₹3–6 LPA','₹10–25 LPA','₹40–60 LPA','₹5–8 LPA'],ans:1,exp:'Analytics Engineer roles in India pay ₹10–25 LPA at the 2–4 year experience level. Senior Analytics Engineer: ₹20–40 LPA. This is a step up from typical Data Analyst roles.'},
+        {q:'How many portfolio projects should you have on GitHub before applying?',opts:['1 is enough','2–3 complete projects with proper READMEs','5 or more','GitHub is not important'],ans:1,exp:'2–3 complete, well-documented projects are the target. Quality over quantity. Each project should demonstrate a different skill stack: one Snowflake+dbt, one AWS, one Databricks. Recruiters check GitHub.'},
+        {q:'What is the first action item from your anti-procrastination plan?',opts:['Apply to 5 jobs immediately','Create a Snowflake free trial account','Create a GitHub account and push one existing script','Set up Databricks Community Edition'],ans:2,exp:'Day 1 action: Create GitHub account + push an existing Python or SQL script. This starts your portfolio immediately with zero new learning required. The momentum from this first action drives the rest.'}
+      ],
+      challenges:[
+        {title:'Rewrite the Weak Resume Bullet',scenario:'Which rewrite best transforms this weak bullet: "Worked with data pipelines at Sudhanand"?',opts:[
+          `"Involved in data pipeline activities"`,
+          `"Built and maintained ETL pipelines using Apache Airflow for a US house insurance client, scheduling 15+ daily jobs and reducing pipeline failure rate by 30%"`,
+          `"Used Python and SQL for data work"`,
+          `"Participated in pipeline team"`
+        ],ans:1,exp:'Option B follows the impact formula: Action verb + Tool + Context (US insurance client) + Scale (15+ jobs) + Result (30% reduction). Always quantify with real numbers. "Involved", "participated", "worked with" are weak — use action verbs: built, designed, migrated, reduced, increased.'}
+      ]
+    }
+  ]
+}
+];
+</script>
+<script>
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function addXP(amount, label) {
+  state.xp += amount;
+  const t = document.getElementById('xp-toast');
+  t.textContent = `+${amount} XP — ${label}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+  updateXPBar();
+}
+
+function updateXPBar() {
+  const lvl = Math.floor(state.xp / XP_PER_LEVEL) + 1;
+  state.level = lvl;
+  const pct = ((state.xp % XP_PER_LEVEL) / XP_PER_LEVEL) * 100;
+  document.getElementById('xp-val').textContent = state.xp;
+  document.getElementById('lvl-val').textContent = lvl;
+  document.getElementById('xp-fill').style.width = pct + '%';
+}
+
+function getModule(moduleId) {
+  for (const phase of COURSE) {
+    for (const mod of phase.modules) {
+      if (mod.id === moduleId) return { phase, mod };
+    }
+  }
+  return null;
+}
+
+function stars(n, max = 4) {
+  return '★'.repeat(n) + '☆'.repeat(max - n);
+}
+
+function phaseProgress(phase) {
+  const total = phase.modules.length;
+  const done = phase.modules.filter(m => state.completedModules.has(m.id)).length;
+  return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
+function checkPhaseComplete(phaseId) {
+  const phase = COURSE.find(p => p.id === phaseId);
+  if (!phase) return;
+  const allDone = phase.modules.every(m => state.completedModules.has(m.id));
+  if (allDone) {
+    const el = document.getElementById(phase.badgeId);
+    if (el && !el.classList.contains('earned')) {
+      el.classList.add('earned');
+      addXP(100, `Phase Complete! ${phase.icon}`);
+    }
+  }
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+function buildNav() {
+  const nav = document.getElementById('nav');
+  nav.innerHTML = '';
+  COURSE.forEach(phase => {
+    const grp = document.createElement('div');
+    grp.className = 'phase-group';
+    const lbl = document.createElement('div');
+    lbl.className = 'phase-label';
+    lbl.style.color = phase.color;
+    lbl.innerHTML = `<span class="phase-icon">${phase.icon}</span>${phase.title}<span class="chevron">▶</span>`;
+    lbl.onclick = () => {
+      lbl.classList.toggle('open');
+    };
+    const list = document.createElement('div');
+    list.className = 'module-list';
+    phase.modules.forEach(mod => {
+      const item = document.createElement('div');
+      item.className = 'mod-item' + (state.completedModules.has(mod.id) ? ' done' : '');
+      item.id = 'nav-' + mod.id;
+      item.innerHTML = `${mod.title}<span class="check"></span>`;
+      item.onclick = () => openModule(mod.id);
+      list.appendChild(item);
+    });
+    grp.appendChild(lbl);
+    grp.appendChild(list);
+    nav.appendChild(grp);
+  });
+}
+
+function setActiveNav(moduleId) {
+  document.querySelectorAll('.mod-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('nav-' + moduleId);
+  if (el) {
+    el.classList.add('active');
+    // auto-open phase
+    const parent = el.closest('.phase-group');
+    if (parent) {
+      const lbl = parent.querySelector('.phase-label');
+      if (lbl && !lbl.classList.contains('open')) lbl.classList.add('open');
+    }
+  }
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+function showDashboard() {
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('module-view').style.display = 'none';
+  document.getElementById('topbar-title').textContent = 'Dashboard';
+  document.querySelectorAll('.mod-item').forEach(el => el.classList.remove('active'));
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const totalMods = COURSE.reduce((s, p) => s + p.modules.length, 0);
+  const doneMods = state.completedModules.size;
+  const totalQ = COURSE.reduce((s, p) => p.modules.reduce((s2, m) => s2 + (m.quiz ? m.quiz.length : 0), s), 0);
+  const correctQ = Object.values(state.quizScores).reduce((s, v) => s + v, 0);
+
+  document.getElementById('dashboard').innerHTML = `
+    <div class="dash-greeting">Welcome back, Panduranga 👋</div>
+    <div class="dash-sub">Your 12-Week Data Engineering Mastery Path — March 2026</div>
+    <div class="dash-grid">
+      <div class="stat-card"><div class="val">${state.xp}</div><div class="lbl">Total XP Earned</div></div>
+      <div class="stat-card"><div class="val">${state.level}</div><div class="lbl">Current Level</div></div>
+      <div class="stat-card"><div class="val">${doneMods}/${totalMods}</div><div class="lbl">Modules Completed</div></div>
+      <div class="stat-card"><div class="val">${correctQ}/${totalQ}</div><div class="lbl">Quiz Answers Correct</div></div>
+    </div>
+    <h3 style="font-size:14px;margin-bottom:14px;color:var(--muted)">PHASES</h3>
+    <div class="phase-cards">
+      ${COURSE.map(phase => {
+        const {done, total, pct} = phaseProgress(phase);
+        return `<div class="phase-card" onclick="openFirstModule('${phase.id}')">
+          <div class="pc-head">
+            <span class="pc-icon">${phase.icon}</span>
+            <div><div class="pc-title">${phase.title}</div><div class="pc-weeks">${phase.weeks}</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">${done}/${total} modules · ${pct}% complete</div>
+          <div class="pc-bar"><div class="pc-fill" style="width:${pct}%;background:${phase.color}"></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:28px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px">
+      <h3 style="font-size:14px;margin-bottom:14px;color:var(--accent)">📊 Your Market Position (from your guide)</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+        ${[
+          {role:'Analytics Engineer', fit:'⭐⭐⭐⭐⭐', sal:'₹10–25 LPA', note:'Best fit — target first'},
+          {role:'AWS Data Engineer', fit:'⭐⭐⭐⭐', sal:'₹10–22 LPA', note:'Strong fit — target second'},
+          {role:'Core Data Engineer', fit:'⭐⭐⭐⭐', sal:'₹8–22 LPA', note:'Apply immediately'},
+          {role:'Databricks DE', fit:'⭐⭐⭐', sal:'₹12–28 LPA', note:'After Phase 4'},
+        ].map(r => `<div style="background:#21262d;border-radius:8px;padding:12px">
+          <div style="font-size:13px;font-weight:600">${r.role}</div>
+          <div style="font-size:12px;color:var(--yellow);margin:3px 0">${r.fit}</div>
+          <div style="font-size:12px;color:var(--green)">${r.sal}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">${r.note}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function openFirstModule(phaseId) {
+  const phase = COURSE.find(p => p.id === phaseId);
+  if (phase && phase.modules.length) openModule(phase.modules[0].id);
+}
+
+// ─── MODULE VIEW ─────────────────────────────────────────────────────────────
+function openModule(moduleId) {
+  const found = getModule(moduleId);
+  if (!found) return;
+  const { phase, mod } = found;
+  state.currentModule = moduleId;
+
+  document.getElementById('dashboard').style.display = 'none';
+  const mv = document.getElementById('module-view');
+  mv.style.display = 'block';
+  document.getElementById('topbar-title').textContent = mod.title;
+  setActiveNav(moduleId);
+
+  mv.innerHTML = `
+    <div class="mv-header">
+      <div class="mv-breadcrumb">${phase.icon} ${phase.title} › ${mod.title}</div>
+      <div class="mv-title">${mod.title}</div>
+      <div class="mv-meta">
+        <span class="diff-stars">${stars(mod.difficulty)}</span>
+        <span>Difficulty ${mod.difficulty}/4</span>
+        ${state.completedModules.has(mod.id) ? '<span style="color:var(--green)">✓ Completed</span>' : ''}
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this,'learn')">📖 Learn</div>
+      <div class="tab" onclick="switchTab(this,'flashcards')">🃏 Flashcards (${(mod.flashcards||[]).length})</div>
+      <div class="tab" onclick="switchTab(this,'quiz')">🧠 Quiz (${(mod.quiz||[]).length} Q)</div>
+      <div class="tab" onclick="switchTab(this,'challenge')">💻 Code Challenge</div>
+    </div>
+    <div class="tab-panel active" id="tp-learn">${buildLearn(mod)}</div>
+    <div class="tab-panel" id="tp-flashcards">${buildFlashcards(mod)}</div>
+    <div class="tab-panel" id="tp-quiz">${buildQuiz(mod)}</div>
+    <div class="tab-panel" id="tp-challenge">${buildChallenge(mod)}</div>`;
+
+  // init flashcard index
+  state._fcIdx = state._fcIdx || {};
+  state._fcIdx[moduleId] = state._fcIdx[moduleId] || 0;
+  state._fcSeen = state._fcSeen || {};
+  state._fcSeen[moduleId] = state._fcSeen[moduleId] || new Set();
+  renderFlashcard(mod);
+}
+
+function switchTab(el, name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tp-' + name).classList.add('active');
+}
+
+// ─── LEARN TAB ───────────────────────────────────────────────────────────────
+function buildLearn(mod) {
+  if (!mod.learn) return '<p>No content</p>';
+  return mod.learn.map(sec => {
+    let html = `<div class="learn-section"><h3>${sec.h}</h3>`;
+    if (sec.p) html += `<p>${sec.p}</p>`;
+    if (sec.code) html += `<div class="code-block"><pre>${escHtml(sec.code)}</pre></div>`;
+    if (sec.refs) {
+      html += '<ul>' + sec.refs.map(r => {
+        const parts = r.split(' — ');
+        return `<li><a class="ref-link" href="https://${parts[0].replace('https://','')}" target="_blank">🔗 ${parts[0]}</a>${parts[1] ? ' — ' + parts[1] : ''}</li>`;
+      }).join('') + '</ul>';
+    }
+    if (sec.tip) html += `<div class="tip-box">${sec.tip}</div>`;
+    html += '</div>';
+    return html;
+  }).join('');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── FLASHCARDS ──────────────────────────────────────────────────────────────
+function buildFlashcards(mod) {
+  if (!mod.flashcards || !mod.flashcards.length) return '<p style="color:var(--muted)">No flashcards for this module.</p>';
+  return `<div class="fc-container">
+    <div class="fc-progress" id="fc-prog-${mod.id}">Card 1 of ${mod.flashcards.length}</div>
+    <div class="fc-card" id="fc-card-${mod.id}" onclick="flipCard('${mod.id}')">
+      <div class="fc-inner">
+        <div class="fc-front"><div class="q" id="fc-q-${mod.id}"></div><div class="hint">Click to reveal answer</div></div>
+        <div class="fc-back"><div class="a" id="fc-a-${mod.id}"></div></div>
+      </div>
+    </div>
+    <div class="fc-btns">
+      <button class="fc-btn" onclick="prevCard('${mod.id}')">← Prev</button>
+      <button class="fc-btn primary" onclick="nextCard('${mod.id}')">Next →</button>
+    </div>
+    <div class="fc-dots" id="fc-dots-${mod.id}">
+      ${mod.flashcards.map((_,i) => `<div class="fc-dot" id="fc-dot-${mod.id}-${i}"></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderFlashcard(mod) {
+  if (!mod.flashcards || !mod.flashcards.length) return;
+  const idx = (state._fcIdx[mod.id] || 0);
+  const card = mod.flashcards[idx];
+  const qEl = document.getElementById('fc-q-' + mod.id);
+  const aEl = document.getElementById('fc-a-' + mod.id);
+  const progEl = document.getElementById('fc-prog-' + mod.id);
+  const cardEl = document.getElementById('fc-card-' + mod.id);
+  if (!qEl || !aEl) return;
+  qEl.textContent = card.q;
+  aEl.innerHTML = card.a;
+  progEl.textContent = `Card ${idx + 1} of ${mod.flashcards.length}`;
+  if (cardEl) cardEl.classList.remove('flipped');
+  // dots
+  mod.flashcards.forEach((_, i) => {
+    const dot = document.getElementById(`fc-dot-${mod.id}-${i}`);
+    if (dot) dot.className = 'fc-dot' + ((state._fcSeen[mod.id] || new Set()).has(i) ? ' seen' : '');
+  });
+}
+
+function flipCard(modId) {
+  const el = document.getElementById('fc-card-' + modId);
+  if (!el) return;
+  el.classList.toggle('flipped');
+  const found = getModule(modId);
+  if (!found) return;
+  const idx = state._fcIdx[modId] || 0;
+  if (!state._fcSeen[modId]) state._fcSeen[modId] = new Set();
+  if (!state._fcSeen[modId].has(idx)) {
+    state._fcSeen[modId].add(idx);
+    addXP(XP_FLASHCARD, 'Flashcard viewed');
+    // mark dot
+    const dot = document.getElementById(`fc-dot-${modId}-${idx}`);
+    if (dot) dot.className = 'fc-dot seen';
+    // check if all seen → module complete
+    if (state._fcSeen[modId].size === found.mod.flashcards.length) {
+      checkModuleComplete(modId);
+    }
+  }
+}
+
+function nextCard(modId) {
+  const found = getModule(modId);
+  if (!found) return;
+  const len = found.mod.flashcards.length;
+  state._fcIdx[modId] = ((state._fcIdx[modId] || 0) + 1) % len;
+  renderFlashcard(found.mod);
+}
+
+function prevCard(modId) {
+  const found = getModule(modId);
+  if (!found) return;
+  const len = found.mod.flashcards.length;
+  state._fcIdx[modId] = ((state._fcIdx[modId] || 0) - 1 + len) % len;
+  renderFlashcard(found.mod);
+}
+
+// ─── QUIZ ─────────────────────────────────────────────────────────────────────
+function buildQuiz(mod) {
+  if (!mod.quiz || !mod.quiz.length) return '<p style="color:var(--muted)">No quiz for this module.</p>';
+  const letters = ['A','B','C','D'];
+  let html = `<div class="quiz-wrap" id="quiz-wrap-${mod.id}">`;
+  mod.quiz.forEach((q, qi) => {
+    html += `<div class="quiz-question" id="qq-${mod.id}-${qi}">
+      <div class="quiz-q-num">Question ${qi+1} of ${mod.quiz.length}</div>
+      <div class="quiz-q-text">${q.q}</div>
+      <div class="quiz-opts">`;
+    q.opts.forEach((opt, oi) => {
+      html += `<div class="quiz-opt" id="qo-${mod.id}-${qi}-${oi}" onclick="selectOpt('${mod.id}',${qi},${oi})">
+        <span class="opt-letter">${letters[oi]}</span>${opt}
+      </div>`;
+    });
+    html += `</div>
+      <div class="quiz-explanation" id="qe-${mod.id}-${qi}">💡 ${q.exp}</div>
+    </div>`;
+  });
+  html += `<button class="quiz-submit" id="quiz-submit-${mod.id}" onclick="submitQuiz('${mod.id}')" disabled>Submit Answers</button>`;
+  html += `<div id="quiz-result-${mod.id}" style="margin-top:20px"></div>`;
+  html += '</div>';
+  return html;
+}
+
+const quizSelections = {};
+
+function selectOpt(modId, qi, oi) {
+  const found = getModule(modId);
+  if (!found || !found.mod.quiz) return;
+  // If quiz already submitted, ignore
+  if (document.getElementById(`quiz-submit-${modId}`) &&
+      document.getElementById(`quiz-submit-${modId}`).disabled &&
+      document.getElementById(`quiz-result-${modId}`).innerHTML) return;
+
+  if (!quizSelections[modId]) quizSelections[modId] = {};
+  quizSelections[modId][qi] = oi;
+
+  // Update UI for this question
+  found.mod.quiz[qi].opts.forEach((_, i) => {
+    const el = document.getElementById(`qo-${modId}-${qi}-${i}`);
+    if (el) el.className = 'quiz-opt' + (i === oi ? ' selected' : '');
+  });
+
+  // Enable submit if all answered
+  const total = found.mod.quiz.length;
+  const answered = Object.keys(quizSelections[modId] || {}).length;
+  const btn = document.getElementById(`quiz-submit-${modId}`);
+  if (btn && answered >= total) btn.disabled = false;
+}
+
+function submitQuiz(modId) {
+  const found = getModule(modId);
+  if (!found) return;
+  const quiz = found.mod.quiz;
+  const sels = quizSelections[modId] || {};
+  let correct = 0;
+
+  quiz.forEach((q, qi) => {
+    const selected = sels[qi];
+    const isCorrect = selected === q.ans;
+    if (isCorrect) correct++;
+
+    // Show correct/wrong on opts
+    q.opts.forEach((_, oi) => {
+      const el = document.getElementById(`qo-${modId}-${qi}-${oi}`);
+      if (!el) return;
+      if (oi === q.ans) el.className = 'quiz-opt correct';
+      else if (oi === selected && !isCorrect) el.className = 'quiz-opt wrong';
+      else el.className = 'quiz-opt';
+      el.onclick = null;
+    });
+
+    // Show explanation
+    const expEl = document.getElementById(`qe-${modId}-${qi}`);
+    if (expEl) expEl.classList.add('show');
+  });
+
+  // Hide submit
+  const btn = document.getElementById(`quiz-submit-${modId}`);
+  if (btn) btn.style.display = 'none';
+
+  // XP
+  const xpEarned = correct * XP_QUIZ_CORRECT;
+  if (!state.quizScores[modId]) {
+    state.quizScores[modId] = correct;
+    if (xpEarned > 0) addXP(xpEarned, `Quiz: ${correct}/${quiz.length} correct`);
+  }
+
+  const pct = Math.round((correct / quiz.length) * 100);
+  const emoji = pct >= 80 ? '🏆' : pct >= 60 ? '👍' : '📚';
+  document.getElementById(`quiz-result-${modId}`).innerHTML = `
+    <div class="quiz-score-card">
+      <div class="big-score">${pct}%</div>
+      <div class="score-lbl">${correct} of ${quiz.length} correct ${emoji}</div>
+      <div class="xp-earned">+${xpEarned} XP earned</div>
+      ${pct < 80 ? '<p style="font-size:12px;color:var(--muted);margin-top:8px">Review the explanations above, then try the flashcards again.</p>' : ''}
+      <button class="retry-btn" onclick="retryQuiz('${modId}')">🔄 Retry Quiz</button>
+    </div>`;
+
+  checkModuleComplete(modId);
+}
+
+function retryQuiz(modId) {
+  quizSelections[modId] = {};
+  delete state.quizScores[modId];
+  const found = getModule(modId);
+  if (found) {
+    document.getElementById('tp-quiz').innerHTML = buildQuiz(found.mod);
+  }
+}
+
+// ─── CODE CHALLENGE ──────────────────────────────────────────────────────────
+function buildChallenge(mod) {
+  if (!mod.challenges || !mod.challenges.length) return '<p style="color:var(--muted)">No code challenge for this module.</p>';
+  let html = '<div class="cc-wrap">';
+  mod.challenges.forEach((ch, ci) => {
+    html += `<div class="cc-card" id="cc-card-${mod.id}-${ci}">
+      <h4>💻 Challenge ${ci+1}: ${ch.title}</h4>
+      <div class="cc-type">Select the correct code option</div>
+      <div class="cc-scenario">${ch.scenario}</div>
+      <div class="cc-opts" id="cc-opts-${mod.id}-${ci}">`;
+    ch.opts.forEach((opt, oi) => {
+      html += `<div class="cc-opt" id="cc-opt-${mod.id}-${ci}-${oi}" onclick="selectCC('${mod.id}',${ci},${oi})">
+        <pre>${escHtml(opt)}</pre>
+      </div>`;
+    });
+    html += `</div>
+      <button class="cc-check-btn" id="cc-btn-${mod.id}-${ci}" onclick="checkCC('${mod.id}',${ci})" disabled>Check Answer</button>
+      <div class="cc-result" id="cc-res-${mod.id}-${ci}"></div>
+    </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+const ccSelections = {};
+
+function selectCC(modId, ci, oi) {
+  if (!ccSelections[modId]) ccSelections[modId] = {};
+  ccSelections[modId][ci] = oi;
+  const found = getModule(modId);
+  if (!found || !found.mod.challenges) return;
+  found.mod.challenges[ci].opts.forEach((_, i) => {
+    const el = document.getElementById(`cc-opt-${modId}-${ci}-${i}`);
+    if (el) el.className = 'cc-opt' + (i === oi ? ' selected' : '');
+  });
+  const btn = document.getElementById(`cc-btn-${modId}-${ci}`);
+  if (btn) btn.disabled = false;
+}
+
+function checkCC(modId, ci) {
+  const found = getModule(modId);
+  if (!found) return;
+  const ch = found.mod.challenges[ci];
+  const selected = (ccSelections[modId] || {})[ci];
+  if (selected === undefined) return;
+
+  const isCorrect = selected === ch.ans;
+
+  // Show result on opts
+  ch.opts.forEach((_, oi) => {
+    const el = document.getElementById(`cc-opt-${modId}-${ci}-${oi}`);
+    if (!el) return;
+    if (oi === ch.ans) el.className = 'cc-opt correct';
+    else if (oi === selected && !isCorrect) el.className = 'cc-opt wrong';
+    else el.className = 'cc-opt';
+    el.onclick = null;
+  });
+
+  const resEl = document.getElementById(`cc-res-${modId}-${ci}`);
+  if (isCorrect) {
+    resEl.className = 'cc-result show pass';
+    resEl.innerHTML = `✅ Correct! ${ch.exp}`;
+    const key = `${modId}-${ci}`;
+    if (!state.ccScores[key]) {
+      state.ccScores[key] = true;
+      addXP(XP_CC_CORRECT, 'Code Challenge solved!');
+    }
+  } else {
+    resEl.className = 'cc-result show fail';
+    resEl.innerHTML = `❌ Not quite. ${ch.exp}`;
+  }
+
+  const btn = document.getElementById(`cc-btn-${modId}-${ci}`);
+  if (btn) btn.disabled = true;
+
+  checkModuleComplete(modId);
+}
+
+// ─── COMPLETION ──────────────────────────────────────────────────────────────
+function checkModuleComplete(modId) {
+  if (state.completedModules.has(modId)) return;
+  const found = getModule(modId);
+  if (!found) return;
+  const { phase, mod } = found;
+
+  const quizDone = !mod.quiz || mod.quiz.length === 0 || state.quizScores[modId] !== undefined;
+  const fcDone = !mod.flashcards || mod.flashcards.length === 0 ||
+    (state._fcSeen && state._fcSeen[modId] && state._fcSeen[modId].size >= Math.ceil(mod.flashcards.length * 0.5));
+  const ccDone = !mod.challenges || mod.challenges.length === 0 ||
+    mod.challenges.some((_, ci) => state.ccScores[`${modId}-${ci}`]);
+
+  if (quizDone && fcDone && ccDone) {
+    state.completedModules.add(modId);
+    addXP(50, `Module Complete: ${mod.title}`);
+    const navEl = document.getElementById('nav-' + modId);
+    if (navEl) navEl.classList.add('done');
+    checkPhaseComplete(phase.id);
+
+    // Show completion banner
+    const mv = document.getElementById('module-view');
+    const existing = mv.querySelector('.complete-banner');
+    if (!existing) {
+      const banner = document.createElement('div');
+      banner.className = 'complete-banner';
+      banner.style.cssText = 'background:#12261e;border:1px solid var(--green);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:var(--green);font-size:13px;font-weight:600';
+      banner.textContent = `✓ Module "${mod.title}" completed! +50 XP`;
+      mv.insertBefore(banner, mv.firstChild);
+    }
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+buildNav();
+showDashboard();
+</script>
+</body>
+</html>
